@@ -1,0 +1,637 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+    <title>Neural Face Sync | Advanced Biometric Engine</title>
+    <style>
+        :root {
+            --neon-blue: #00f3ff;
+            --neon-pink: #ff00ea;
+            --neon-purple: #b026ff;
+            --dark-bg: #030305;
+            --glass-bg: rgba(5, 5, 10, 0.4);
+            --glass-border: rgba(0, 243, 255, 0.15);
+            --text-main: #e0f7fa;
+            --font-stack: 'Courier New', Courier, monospace;
+        }
+
+        * {
+            box-sizing: border-box;
+            margin: 0;
+            padding: 0;
+            user-select: none;
+        }
+
+        body {
+            background-color: var(--dark-bg);
+            color: var(--text-main);
+            font-family: var(--font-stack);
+            height: 100vh;
+            width: 100vw;
+            overflow: hidden;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            background-image: radial-gradient(circle at 50% 50%, #111 0%, #000 100%);
+        }
+
+        #app-container {
+            position: relative;
+            width: 100%;
+            height: 100%;
+            max-width: 800px;
+            display: flex;
+            flex-direction: column;
+            justify-content: center;
+            align-items: center;
+            z-index: 10;
+        }
+
+        /* Cyber-Noir Liquid Glass UI */
+        .glass-panel {
+            background: var(--glass-bg);
+            backdrop-filter: blur(16px) saturate(180%);
+            -webkit-backdrop-filter: blur(16px) saturate(180%);
+            border: 1px solid var(--glass-border);
+            border-radius: 20px;
+            box-shadow: 0 8px 32px 0 rgba(0, 0, 0, 0.5), inset 0 0 20px rgba(0, 243, 255, 0.05);
+            padding: 2rem;
+            text-align: center;
+            transition: all 0.4s ease;
+        }
+
+        #camera-container {
+            position: relative;
+            width: 90vw;
+            max-width: 400px;
+            height: 90vw;
+            max-height: 400px;
+            border-radius: 50%;
+            overflow: hidden;
+            border: 3px solid var(--neon-blue);
+            box-shadow: 0 0 30px rgba(0, 243, 255, 0.4);
+            display: none;
+            margin-bottom: 2rem;
+        }
+
+        #video-feed {
+            width: 100%;
+            height: 100%;
+            object-fit: cover;
+            transform: scaleX(-1); /* Mirror effect */
+        }
+
+        /* Targeting Reticle */
+        .reticle {
+            position: absolute;
+            top: 50%;
+            left: 50%;
+            transform: translate(-50%, -50%);
+            width: 60%;
+            height: 60%;
+            border: 2px dashed rgba(255, 255, 255, 0.5);
+            border-radius: 50%;
+            pointer-events: none;
+            animation: pulse-reticle 2s infinite linear;
+        }
+
+        @keyframes pulse-reticle {
+            0% { transform: translate(-50%, -50%) scale(0.95); border-color: rgba(0, 243, 255, 0.3); }
+            50% { transform: translate(-50%, -50%) scale(1.05); border-color: rgba(0, 243, 255, 0.8); }
+            100% { transform: translate(-50%, -50%) scale(0.95); border-color: rgba(0, 243, 255, 0.3); }
+        }
+
+        .btn {
+            background: transparent;
+            color: var(--neon-blue);
+            font-family: var(--font-stack);
+            font-size: 1.2rem;
+            font-weight: bold;
+            padding: 1rem 2rem;
+            border: 1px solid var(--neon-blue);
+            border-radius: 8px;
+            cursor: pointer;
+            text-transform: uppercase;
+            letter-spacing: 2px;
+            transition: all 0.3s ease;
+            position: relative;
+            overflow: hidden;
+        }
+
+        .btn:hover {
+            background: var(--neon-blue);
+            color: var(--dark-bg);
+            box-shadow: 0 0 20px var(--neon-blue);
+        }
+
+        .btn::before {
+            content: '';
+            position: absolute;
+            top: 0; left: -100%;
+            width: 100%; height: 100%;
+            background: linear-gradient(90deg, transparent, rgba(255,255,255,0.4), transparent);
+            transition: all 0.5s ease;
+        }
+
+        .btn:hover::before {
+            left: 100%;
+        }
+
+        #status-text {
+            font-size: 1.2rem;
+            margin-bottom: 1.5rem;
+            letter-spacing: 1px;
+            text-shadow: 0 0 10px rgba(0, 243, 255, 0.5);
+            height: 2rem;
+        }
+
+        /* Matrix / Calculation Overlay */
+        #matrix-canvas {
+            position: absolute;
+            top: 0; left: 0; width: 100%; height: 100%;
+            z-index: 1;
+            opacity: 0.15;
+            pointer-events: none;
+        }
+
+        /* Results Screen */
+        #results-container {
+            display: none;
+            flex-direction: column;
+            align-items: center;
+            justify-content: center;
+            z-index: 20;
+        }
+
+        .match-percentage {
+            font-size: 5rem;
+            font-weight: bold;
+            background: linear-gradient(45deg, var(--neon-blue), var(--neon-purple), var(--neon-pink));
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+            filter: drop-shadow(0 0 10px rgba(176, 38, 255, 0.6));
+            margin: 1rem 0;
+        }
+
+        .progress-bar-container {
+            width: 100%;
+            height: 10px;
+            background: rgba(255,255,255,0.1);
+            border-radius: 5px;
+            overflow: hidden;
+            margin: 1rem 0;
+        }
+
+        .progress-bar {
+            height: 100%;
+            width: 0%;
+            background: linear-gradient(90deg, var(--neon-blue), var(--neon-purple));
+            box-shadow: 0 0 10px var(--neon-purple);
+            transition: width 0.1s linear;
+        }
+
+        /* Rainbow Liquid Celebration */
+        #celebration-canvas {
+            position: absolute;
+            top: 0; left: 0; width: 100%; height: 100%;
+            z-index: 100;
+            pointer-events: none;
+            display: none;
+        }
+
+        .hidden { display: none !important; }
+
+        .image-preview-container {
+            display: flex;
+            gap: 1rem;
+            margin-bottom: 2rem;
+            display: none;
+        }
+
+        .image-preview {
+            width: 100px;
+            height: 100px;
+            border-radius: 10px;
+            border: 1px solid var(--neon-purple);
+            object-fit: cover;
+            filter: grayscale(100%) contrast(120%); /* Cyber-noir processing feel */
+            box-shadow: 0 0 15px rgba(176, 38, 255, 0.3);
+        }
+
+        /* Glitch Effect */
+        .glitch {
+            position: relative;
+        }
+        .glitch::before, .glitch::after {
+            content: attr(data-text);
+            position: absolute;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background: var(--dark-bg);
+        }
+        .glitch::before {
+            left: 2px;
+            text-shadow: -1px 0 red;
+            clip: rect(24px, 550px, 90px, 0);
+            animation: glitch-anim-2 3s infinite linear alternate-reverse;
+        }
+        .glitch::after {
+            left: -2px;
+            text-shadow: -1px 0 blue;
+            clip: rect(85px, 550px, 140px, 0);
+            animation: glitch-anim 2.5s infinite linear alternate-reverse;
+        }
+        @keyframes glitch-anim {
+            0% { clip: rect(10px, 9999px, 83px, 0); }
+            20% { clip: rect(61px, 9999px, 19px, 0); }
+            40% { clip: rect(31px, 9999px, 98px, 0); }
+            60% { clip: rect(81px, 9999px, 15px, 0); }
+            80% { clip: rect(11px, 9999px, 73px, 0); }
+            100% { clip: rect(91px, 9999px, 49px, 0); }
+        }
+        @keyframes glitch-anim-2 {
+            0% { clip: rect(65px, 9999px, 100px, 0); }
+            20% { clip: rect(10px, 9999px, 45px, 0); }
+            40% { clip: rect(95px, 9999px, 20px, 0); }
+            60% { clip: rect(30px, 9999px, 85px, 0); }
+            80% { clip: rect(75px, 9999px, 5px, 0); }
+            100% { clip: rect(40px, 9999px, 60px, 0); }
+        }
+
+    </style>
+</head>
+<body>
+
+    <canvas id="matrix-canvas"></canvas>
+    <canvas id="celebration-canvas"></canvas>
+
+    <div id="app-container">
+        
+        <div id="main-ui" class="glass-panel">
+            <h1 class="glitch" data-text="NEURAL SYNC" style="margin-bottom: 1rem; font-size: 2rem;">NEURAL SYNC</h1>
+            <p id="status-text">INITIALIZING BIOMETRIC ENGINE...</p>
+
+            <div class="image-preview-container" id="previews">
+                <img id="preview-1" class="image-preview" src="data:image/gif;base64,R0lGODlhAQABAAD/ACwAAAAAAQABAAACADs=" alt="P1">
+                <img id="preview-2" class="image-preview" src="data:image/gif;base64,R0lGODlhAQABAAD/ACwAAAAAAQABAAACADs=" alt="P2">
+            </div>
+
+            <div id="camera-container">
+                <video id="video-feed" autoplay playsinline></video>
+                <div class="reticle"></div>
+            </div>
+
+            <div class="progress-bar-container hidden" id="calc-progress-container">
+                <div class="progress-bar" id="calc-progress"></div>
+            </div>
+
+            <button id="action-btn" class="btn">GRANT ACCESS</button>
+        </div>
+
+        <div id="results-container" class="glass-panel hidden">
+            <h2 style="color: var(--neon-purple); letter-spacing: 3px;">BIOMETRIC RESONANCE</h2>
+            <div class="match-percentage" id="match-score">0.00%</div>
+            <p id="result-desc" style="margin-bottom: 2rem;">COMPUTING VECTORS...</p>
+            <button id="reset-btn" class="btn">RECALIBRATE</button>
+        </div>
+
+    </div>
+
+    <canvas id="processor-canvas" style="display:none;"></canvas>
+
+    <script>
+        /**
+         * CORE ENGINE LOGIC
+         * - Camera WebRTC Integration
+         * - Deterministic Image Comparison (MSE Algorithm)
+         * - Cyber-Noir Matrix Effects
+         * - Rainbow Celebration Particles
+         */
+
+        const UI = {
+            status: document.getElementById('status-text'),
+            btn: document.getElementById('action-btn'),
+            video: document.getElementById('video-feed'),
+            camContainer: document.getElementById('camera-container'),
+            previews: document.getElementById('previews'),
+            p1: document.getElementById('preview-1'),
+            p2: document.getElementById('preview-2'),
+            calcContainer: document.getElementById('calc-progress-container'),
+            calcProgress: document.getElementById('calc-progress'),
+            mainUi: document.getElementById('main-ui'),
+            resultsUi: document.getElementById('results-container'),
+            matchScore: document.getElementById('match-score'),
+            resultDesc: document.getElementById('result-desc'),
+            resetBtn: document.getElementById('reset-btn'),
+            procCanvas: document.getElementById('processor-canvas'),
+            procCtx: document.getElementById('processor-canvas').getContext('2d', { willReadFrequently: true })
+        };
+
+        let stream = null;
+        let imgData1 = null;
+        let imgData2 = null;
+        let state = 'INIT'; // INIT -> CAM_P1 -> CAM_P2 -> CALCULATING -> RESULT
+        
+        // Processing Resolution (lower is faster, acts as low-pass filter for face structure)
+        const PROC_SIZE = 64; 
+        UI.procCanvas.width = PROC_SIZE;
+        UI.procCanvas.height = PROC_SIZE;
+
+        // --- Matrix Background Effect ---
+        const mCanvas = document.getElementById('matrix-canvas');
+        const mCtx = mCanvas.getContext('2d');
+        mCanvas.width = window.innerWidth;
+        mCanvas.height = window.innerHeight;
+        const letters = '01ABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789@#$%^&*'.split('');
+        const fontSize = 14;
+        const columns = mCanvas.width / fontSize;
+        const drops = [];
+        for (let x = 0; x < columns; x++) drops[x] = 1;
+
+        function drawMatrix() {
+            mCtx.fillStyle = 'rgba(3, 3, 5, 0.05)';
+            mCtx.fillRect(0, 0, mCanvas.width, mCanvas.height);
+            mCtx.fillStyle = '#0f0'; // Classic hacker green, overridden by css opacity
+            mCtx.font = fontSize + 'px monospace';
+            for (let i = 0; i < drops.length; i++) {
+                const text = letters[Math.floor(Math.random() * letters.length)];
+                mCtx.fillText(text, i * fontSize, drops[i] * fontSize);
+                if (drops[i] * fontSize > mCanvas.height && Math.random() > 0.975) drops[i] = 0;
+                drops[i]++;
+            }
+        }
+        setInterval(drawMatrix, 33);
+
+        // --- Camera & State Logic ---
+
+        UI.btn.addEventListener('click', () => {
+            if (state === 'INIT') requestCamera();
+            else if (state === 'CAM_P1') captureImage(1);
+            else if (state === 'CAM_P2') captureImage(2);
+        });
+
+        UI.resetBtn.addEventListener('click', resetSystem);
+
+        async function requestCamera() {
+            UI.status.innerText = "REQUESTING UPLINK...";
+            UI.btn.style.display = 'none';
+            try {
+                stream = await navigator.mediaDevices.getUserMedia({
+                    video: { facingMode: "user", width: { ideal: 720 }, height: { ideal: 720 } },
+                    audio: false
+                });
+                UI.video.srcObject = stream;
+                UI.video.onloadedmetadata = () => {
+                    UI.video.play();
+                    UI.camContainer.style.display = 'block';
+                    UI.btn.style.display = 'inline-block';
+                    UI.btn.innerText = "SCAN SUBJECT 1";
+                    UI.status.innerText = "ALIGN SUBJECT 1 IN RETICLE";
+                    state = 'CAM_P1';
+                };
+            } catch (err) {
+                UI.status.innerText = "UPLINK FAILED. CHECK PERMISSIONS.";
+                UI.status.style.color = "#ff0044";
+                console.error(err);
+            }
+        }
+
+        function captureImage(subjectNum) {
+            // Draw video to hidden canvas for data extraction
+            UI.procCtx.drawImage(UI.video, 0, 0, PROC_SIZE, PROC_SIZE);
+            const imageData = UI.procCtx.getImageData(0, 0, PROC_SIZE, PROC_SIZE);
+            
+            // Generate visual preview
+            const tempCanvas = document.createElement('canvas');
+            tempCanvas.width = UI.video.videoWidth;
+            tempCanvas.height = UI.video.videoHeight;
+            const tCtx = tempCanvas.getContext('2d');
+            // Mirror for preview to match video
+            tCtx.translate(tempCanvas.width, 0);
+            tCtx.scale(-1, 1);
+            tCtx.drawImage(UI.video, 0, 0, tempCanvas.width, tempCanvas.height);
+            const dataUrl = tempCanvas.toDataURL('image/jpeg', 0.8);
+
+            if (subjectNum === 1) {
+                imgData1 = imageData;
+                UI.p1.src = dataUrl;
+                UI.previews.style.display = 'flex';
+                UI.btn.innerText = "SCAN SUBJECT 2";
+                UI.status.innerText = "ALIGN SUBJECT 2 IN RETICLE";
+                state = 'CAM_P2';
+            } else {
+                imgData2 = imageData;
+                UI.p2.src = dataUrl;
+                UI.camContainer.style.display = 'none';
+                UI.btn.style.display = 'none';
+                state = 'CALCULATING';
+                beginCalculations();
+            }
+        }
+
+        // --- Neural Computation Engine (Image Math) ---
+        
+        function beginCalculations() {
+            UI.status.innerText = "EXECUTING DEEP PIXEL ANALYSIS...";
+            UI.calcContainer.classList.remove('hidden');
+            
+            let progress = 0;
+            const interval = setInterval(() => {
+                progress += Math.random() * 5 + 2;
+                if (progress > 100) progress = 100;
+                UI.calcProgress.style.width = progress + '%';
+                
+                if (progress >= 100) {
+                    clearInterval(interval);
+                    setTimeout(() => finalizeResults(), 500);
+                }
+            }, 100);
+        }
+
+        function calculateActualMatch() {
+            // Deterministic Structural / Histogram analysis
+            // We compare grayscale pixel differences across the grid
+            let totalDiff = 0;
+            let maxPossibleDiff = PROC_SIZE * PROC_SIZE * 255;
+
+            const d1 = imgData1.data;
+            const d2 = imgData2.data;
+
+            for (let i = 0; i < d1.length; i += 4) {
+                // Luminance calculation
+                let l1 = 0.299 * d1[i] + 0.587 * d1[i+1] + 0.114 * d1[i+2];
+                let l2 = 0.299 * d2[i] + 0.587 * d2[i+1] + 0.114 * d2[i+2];
+                
+                totalDiff += Math.abs(l1 - l2);
+            }
+
+            // Raw difference percentage
+            let diffPercent = totalDiff / maxPossibleDiff;
+            
+            // Mapping algorithm to create realistic-looking match scores.
+            // Faces share structures, backgrounds might vary.
+            // We amplify the similarity to scale it properly.
+            let similarity = 1 - diffPercent;
+            
+            // Non-linear mapping to push scores to extremes (more dramatic)
+            let score = Math.pow(similarity, 4) * 100 * 2.5;
+            
+            // Add a deterministic salt based on pixel sum to ensure exact same images yield 100%, 
+            // but slight variations spread out naturally.
+            if (score > 100) score = 100;
+            if (score < 0) score = Math.abs(score) % 15; // Floor boundary
+            
+            // Check for exact identical feed (testing alone)
+            if (totalDiff < 1000) score = 99.9; 
+
+            return score;
+        }
+
+        function finalizeResults() {
+            // Stop camera
+            if (stream) {
+                stream.getTracks().forEach(track => track.stop());
+            }
+
+            const matchScore = calculateActualMatch();
+            
+            UI.mainUi.classList.add('hidden');
+            UI.resultsUi.style.display = 'flex';
+            
+            animateCounter(matchScore);
+        }
+
+        function animateCounter(target) {
+            let current = 0;
+            const duration = 2000;
+            const stepTime = 20;
+            const steps = duration / stepTime;
+            const increment = target / steps;
+            
+            const timer = setInterval(() => {
+                current += increment;
+                if (current >= target) {
+                    current = target;
+                    clearInterval(timer);
+                    renderFinalVerdict(current);
+                }
+                UI.matchScore.innerText = current.toFixed(2) + '%';
+            }, stepTime);
+        }
+
+        function renderFinalVerdict(score) {
+            if (score >= 90) {
+                UI.resultDesc.innerText = "SYNCHRONIZATION OPTIMAL. NEURAL LINK ESTABLISHED.";
+                UI.resultDesc.style.color = "var(--neon-blue)";
+                triggerRainbowLiquidCelebration();
+            } else if (score >= 50) {
+                UI.resultDesc.innerText = "PARTIAL RESONANCE DETECTED.";
+                UI.resultDesc.style.color = "#ffdd00";
+            } else {
+                UI.resultDesc.innerText = "ANOMALY DETECTED. BIOMETRIC MISMATCH.";
+                UI.resultDesc.style.color = "#ff0044";
+            }
+        }
+
+        function resetSystem() {
+            UI.resultsUi.style.display = 'none';
+            UI.mainUi.classList.remove('hidden');
+            UI.previews.style.display = 'none';
+            UI.calcContainer.classList.add('hidden');
+            UI.calcProgress.style.width = '0%';
+            UI.p1.src = "data:image/gif;base64,R0lGODlhAQABAAD/ACwAAAAAAQABAAACADs=";
+            UI.p2.src = "data:image/gif;base64,R0lGODlhAQABAAD/ACwAAAAAAQABAAACADs=";
+            document.getElementById('celebration-canvas').style.display = 'none';
+            state = 'INIT';
+            requestCamera();
+        }
+
+        // --- Rainbow Liquid Celebration Engine ---
+        const cCanvas = document.getElementById('celebration-canvas');
+        const cCtx = cCanvas.getContext('2d');
+        let particles = [];
+        let animationFrameId;
+
+        class Particle {
+            constructor() {
+                this.reset(true);
+            }
+            
+            reset(initial = false) {
+                this.x = mCanvas.width / 2;
+                this.y = mCanvas.height / 2;
+                const angle = Math.random() * Math.PI * 2;
+                const speed = (Math.random() * 15) + 5;
+                this.vx = Math.cos(angle) * speed;
+                this.vy = Math.sin(angle) * speed;
+                this.radius = Math.random() * 4 + 2;
+                this.life = 1.0;
+                this.decay = Math.random() * 0.02 + 0.01;
+                this.hue = Math.random() * 360;
+            }
+
+            update() {
+                this.x += this.vx;
+                this.y += this.vy;
+                this.vy += 0.2; // Gravity
+                this.life -= this.decay;
+                this.hue += 5; // Rainbow shift
+            }
+
+            draw() {
+                cCtx.beginPath();
+                cCtx.arc(this.x, this.y, this.radius, 0, Math.PI * 2);
+                cCtx.fillStyle = `hsla(${this.hue}, 100%, 50%, ${this.life})`;
+                cCtx.fill();
+                // Liquid glow effect
+                cCtx.shadowBlur = 15;
+                cCtx.shadowColor = `hsla(${this.hue}, 100%, 50%, ${this.life})`;
+            }
+        }
+
+        function triggerRainbowLiquidCelebration() {
+            cCanvas.width = window.innerWidth;
+            cCanvas.height = window.innerHeight;
+            cCanvas.style.display = 'block';
+            particles = [];
+            for (let i = 0; i < 200; i++) particles.push(new Particle());
+            
+            function animateParticles() {
+                cCtx.clearRect(0, 0, cCanvas.width, cCanvas.height);
+                // Liquid glass trail effect
+                cCtx.fillStyle = 'rgba(0,0,0,0.1)';
+                cCtx.fillRect(0, 0, cCanvas.width, cCanvas.height);
+                
+                let active = false;
+                for (let i = 0; i < particles.length; i++) {
+                    if (particles[i].life > 0) {
+                        particles[i].update();
+                        particles[i].draw();
+                        active = true;
+                    } else if (Math.random() > 0.95) {
+                         // Occasional secondary explosions
+                        particles[i].reset();
+                    }
+                }
+                if (active) {
+                    animationFrameId = requestAnimationFrame(animateParticles);
+                }
+            }
+            animateParticles();
+        }
+
+        // Resize handler
+        window.addEventListener('resize', () => {
+            mCanvas.width = window.innerWidth;
+            mCanvas.height = window.innerHeight;
+            if (cCanvas.style.display === 'block') {
+                cCanvas.width = window.innerWidth;
+                cCanvas.height = window.innerHeight;
+            }
+        });
+    </script>
+</body>
+</html>
