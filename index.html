@@ -3,759 +3,653 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
-    <title>Ultimate 3D Rainbow Meme Soundboard</title>
+    <title>Cyber-Noir Kart 3D</title>
     <style>
-        /* ==========================================================================
-           ULTIMATE 3D SOUNDBOARD CSS ARCHITECTURE & RAINBOW ENGINE
-           ========================================================================== */
-        
+        /* =========================================
+           ADVANCED HUD & UI CSS (CYBER-NOIR THEME)
+           ========================================= */
         :root {
-            --bg-color: #050505;
-            --text-main: #ffffff;
-            --font-main: 'Black Han Sans', 'Impact', 'Segoe UI', sans-serif;
-            --header-height: 180px;
+            --neon-pink: #ff00ff;
+            --neon-cyan: #00ffff;
+            --dark-void: #050510;
+            --glass-bg: rgba(10, 10, 25, 0.6);
         }
-
-        * {
-            box-sizing: border-box;
-            margin: 0;
-            padding: 0;
-            user-select: none;
-            -webkit-tap-highlight-color: transparent;
-        }
-
         body, html {
-            width: 100%;
-            height: 100%;
-            background-color: var(--bg-color);
-            color: var(--text-main);
-            font-family: var(--font-main);
-            overflow-x: hidden;
-            scroll-behavior: smooth;
+            margin: 0; padding: 0; width: 100%; height: 100%;
+            overflow: hidden; background-color: var(--dark-void);
+            font-family: 'Courier New', Courier, monospace;
+            touch-action: none; /* Crucial for mobile touch handling */
+            user-select: none; -webkit-user-select: none;
         }
-
-        /* --- MOVING RAINBOW BACKGROUND --- */
-        #rainbow-bg {
-            position: fixed;
-            top: 0;
-            left: 0;
-            width: 100vw;
-            height: 100vh;
-            z-index: -2;
-            background: linear-gradient(
-                124deg, 
-                #ff2400, #e81d1d, #e8b71d, #e3e81d, 
-                #1de840, #1ddde8, #2b1de8, #dd00f3, #dd00f3
-            );
-            background-size: 1800% 1800%;
-            animation: rainbow-anim 12s ease infinite;
-            filter: brightness(0.6) saturate(1.5);
+        #gameCanvas {
+            position: absolute; top: 0; left: 0;
+            width: 100vw; height: 100vh; z-index: 1;
         }
-
-        @keyframes rainbow-anim {
-            0% { background-position: 0% 82%; }
-            50% { background-position: 100% 19%; }
-            100% { background-position: 0% 82%; }
+        #ui-layer {
+            position: absolute; top: 0; left: 0;
+            width: 100%; height: 100%; z-index: 10;
+            pointer-events: none; display: flex;
+            flex-direction: column; justify-content: space-between;
         }
-
-        /* Matrix/Grid Overlay for depth */
-        #grid-overlay {
-            position: fixed;
-            top: 0; left: 0; width: 100vw; height: 100vh;
-            z-index: -1;
-            background-image: 
-                linear-gradient(rgba(0,0,0,0.3) 2px, transparent 2px),
-                linear-gradient(90deg, rgba(0,0,0,0.3) 2px, transparent 2px);
-            background-size: 40px 40px;
-            perspective: 1000px;
-            transform: translateZ(-500px);
-            pointer-events: none;
+        .hud-element {
+            background: var(--glass-bg);
+            border: 1px solid var(--neon-cyan);
+            box-shadow: 0 0 10px var(--neon-cyan), inset 0 0 10px var(--neon-cyan);
+            color: #fff; text-transform: uppercase; font-weight: bold;
+            text-shadow: 0 0 5px var(--neon-cyan); padding: 15px 25px;
+            border-radius: 8px; backdrop-filter: blur(5px);
         }
-
-        /* --- HEADER & CONTROLS --- */
-        header {
-            position: fixed;
-            top: 0;
-            left: 0;
-            width: 100%;
-            height: var(--header-height);
-            background: rgba(0, 0, 0, 0.7);
-            backdrop-filter: blur(20px);
-            -webkit-backdrop-filter: blur(20px);
-            border-bottom: 4px solid rgba(255, 255, 255, 0.1);
-            z-index: 1000;
-            display: flex;
-            flex-direction: column;
-            align-items: center;
-            justify-content: flex-start;
-            box-shadow: 0 10px 50px rgba(0,0,0,0.8);
-            padding-top: 20px;
+        #top-hud {
+            display: flex; justify-content: space-between; padding: 20px;
         }
-
-        h1 {
-            font-size: 4rem;
-            font-weight: 900;
-            text-transform: uppercase;
-            letter-spacing: 5px;
-            color: #fff;
-            text-shadow: 
-                3px 3px 0 #000,
-                -1px -1px 0 #000,  
-                1px -1px 0 #000,
-                -1px  1px 0 #000,
-                1px  1px 0 #000,
-                0 0 20px rgba(255, 255, 255, 0.8);
-            margin-bottom: 15px;
+        #lap-counter { font-size: 28px; }
+        #position-tracker { font-size: 28px; color: var(--neon-pink); border-color: var(--neon-pink); box-shadow: 0 0 10px var(--neon-pink), inset 0 0 10px var(--neon-pink); text-shadow: 0 0 5px var(--neon-pink);}
+        #item-box-ui {
+            position: absolute; top: 20px; left: 50%; transform: translateX(-50%);
+            width: 80px; height: 80px; border: 3px solid var(--neon-cyan);
+            border-radius: 15px; display: flex; align-items: center; justify-content: center;
+            font-size: 40px; background: rgba(0, 255, 255, 0.1);
         }
-
-        .controls {
-            display: flex;
-            gap: 30px;
-            align-items: center;
-            background: rgba(255,255,255,0.05);
-            padding: 15px 30px;
-            border-radius: 50px;
-            border: 1px solid rgba(255,255,255,0.2);
-            box-shadow: inset 0 0 20px rgba(0,0,0,0.5);
+        #speedometer-container {
+            position: absolute; bottom: 180px; right: 20px;
+            width: 200px; height: 20px; background: #111;
+            border: 2px solid var(--neon-cyan); border-radius: 10px; overflow: hidden;
         }
-
-        .master-volume {
-            display: flex;
-            align-items: center;
-            gap: 15px;
-            font-size: 1.5rem;
+        #speed-bar {
+            width: 0%; height: 100%; background: linear-gradient(90deg, var(--neon-cyan), var(--neon-pink));
+            box-shadow: 0 0 10px var(--neon-pink); transition: width 0.1s linear;
         }
-
-        input[type=range] {
-            -webkit-appearance: none;
-            width: 250px;
-            background: rgba(0,0,0,0.8);
-            height: 12px;
-            border-radius: 6px;
-            outline: none;
-            border: 2px solid rgba(255,255,255,0.2);
-            box-shadow: inset 0 2px 5px rgba(0,0,0,0.5);
+        #speed-text {
+            position: absolute; bottom: 210px; right: 20px; font-size: 24px; color: var(--neon-cyan); text-shadow: 0 0 5px var(--neon-cyan);
         }
-
-        input[type=range]::-webkit-slider-thumb {
-            -webkit-appearance: none;
-            width: 26px;
-            height: 26px;
-            border-radius: 50%;
-            background: #fff;
-            cursor: pointer;
-            box-shadow: 0 0 15px rgba(255,255,255,0.8);
-            border: 3px solid #000;
-        }
-
-        .stop-btn {
-            background: #ff0000;
-            color: white;
-            border: none;
-            padding: 12px 30px;
-            border-radius: 30px;
-            font-weight: 900;
-            font-size: 1.2rem;
-            cursor: pointer;
-            box-shadow: 0 6px 0 #8b0000, 0 10px 20px rgba(0,0,0,0.5);
-            transition: all 0.1s cubic-bezier(0.4, 0, 0.2, 1);
-            text-transform: uppercase;
-            letter-spacing: 2px;
-            text-shadow: 1px 1px 2px #000;
-        }
-
-        .stop-btn:active {
-            transform: translateY(6px);
-            box-shadow: 0 0px 0 #8b0000, 0 2px 5px rgba(0,0,0,0.5);
-        }
-
-        /* --- AUDIO VISUALIZER --- */
-        #visualizer {
-            position: absolute;
-            bottom: 0;
-            left: 0;
-            width: 100%;
-            height: 60px;
-            pointer-events: none;
-            opacity: 0.8;
-            mix-blend-mode: screen;
-        }
-
-        /* --- MAIN GRID LAYOUT --- */
-        main {
-            padding-top: calc(var(--header-height) + 40px);
-            padding-bottom: 100px;
-            display: flex;
-            justify-content: center;
-        }
-
-        .grid-container {
-            display: grid;
-            grid-template-columns: repeat(auto-fill, minmax(180px, 1fr));
-            gap: 35px;
-            width: 100%;
-            max-width: 1800px;
-            padding: 0 3rem;
-        }
-
-        /* ==========================================================================
-           ADVANCED 3D BUTTON PHYSICS & STYLING
-           These buttons ACTUALLY GO DOWN due to strict CSS transforms
-           ========================================================================== */
         
-        .sound-btn-wrapper {
-            position: relative;
-            width: 100%;
-            aspect-ratio: 1 / 1;
-            perspective: 800px;
+        /* Mobile Touch Controls */
+        #mobile-controls {
+            display: none; width: 100%; height: 150px;
+            pointer-events: auto; justify-content: space-between;
+            padding: 20px; box-sizing: border-box; align-items: flex-end;
+        }
+        .control-group { display: flex; gap: 15px; }
+        .btn {
+            width: 70px; height: 70px; border-radius: 50%;
+            background: rgba(0, 255, 255, 0.1); border: 2px solid var(--neon-cyan);
+            color: var(--neon-cyan); font-size: 24px; font-weight: bold;
+            display: flex; align-items: center; justify-content: center;
+            box-shadow: 0 0 15px rgba(0, 255, 255, 0.5) inset; cursor: pointer;
+        }
+        .btn:active { background: rgba(0, 255, 255, 0.4); box-shadow: 0 0 25px var(--neon-cyan); }
+        .btn.action { border-color: var(--neon-pink); color: var(--neon-pink); box-shadow: 0 0 15px rgba(255, 0, 255, 0.5) inset; }
+        .btn.action:active { background: rgba(255, 0, 255, 0.4); box-shadow: 0 0 25px var(--neon-pink); }
+        
+        @media (max-width: 900px) {
+            #mobile-controls { display: flex; }
+            #speedometer-container { bottom: 20px; right: 50%; transform: translateX(50%); width: 150px; }
+            #speed-text { bottom: 50px; right: 50%; transform: translateX(50%); }
+            #lap-counter, #position-tracker { font-size: 18px; padding: 10px; }
         }
 
-        .sound-btn {
-            position: absolute;
-            top: 0; left: 0; width: 100%; height: 100%;
-            appearance: none;
-            border: none;
-            background: transparent;
-            cursor: pointer;
-            outline: none;
-            border-radius: 25px;
-            /* The critical transition for the "pressing down" physical effect */
-            transition: transform 0.08s cubic-bezier(0.2, 0.8, 0.2, 1), 
-                        box-shadow 0.08s cubic-bezier(0.2, 0.8, 0.2, 1);
-            transform-style: preserve-3d;
-            
-            /* Initial 3D raised state */
-            transform: translateY(0px) translateZ(0px);
-            /* Massive box shadow to simulate the 3D block underneath */
-            box-shadow: 
-                0 15px 0 var(--btn-dark),
-                0 25px 30px rgba(0,0,0,0.6),
-                inset 0 5px 15px rgba(255,255,255,0.4),
-                inset 0 -5px 15px rgba(0,0,0,0.2);
-            
-            background: linear-gradient(135deg, var(--btn-light), var(--btn-color));
-            display: flex;
-            align-items: center;
-            justify-content: center;
-            padding: 15px;
-            border: 2px solid rgba(255,255,255,0.3);
+        #start-screen {
+            position: absolute; top: 0; left: 0; width: 100%; height: 100%;
+            background: rgba(5, 5, 16, 0.9); z-index: 100;
+            display: flex; flex-direction: column; align-items: center; justify-content: center;
+            pointer-events: auto;
         }
-
-        /* Inner glow/glass rim */
-        .sound-btn::before {
-            content: '';
-            position: absolute;
-            top: 4px; left: 4px; right: 4px; bottom: 4px;
-            border-radius: 20px;
-            border: 2px solid rgba(255,255,255,0.2);
-            pointer-events: none;
-            background: linear-gradient(180deg, rgba(255,255,255,0.2) 0%, transparent 50%);
+        h1 { color: var(--neon-pink); text-shadow: 0 0 20px var(--neon-pink); font-size: 60px; text-align: center; margin-bottom: 10px; }
+        h3 { color: var(--neon-cyan); text-shadow: 0 0 10px var(--neon-cyan); font-weight: normal; margin-bottom: 40px; }
+        #start-btn {
+            background: transparent; border: 3px solid var(--neon-cyan); color: var(--neon-cyan);
+            font-size: 30px; font-family: inherit; padding: 15px 40px; cursor: pointer;
+            text-transform: uppercase; transition: all 0.2s; box-shadow: 0 0 15px var(--neon-cyan) inset;
         }
-
-        .btn-text {
-            color: #fff;
-            font-size: 1.3rem;
-            font-weight: 900;
-            text-align: center;
-            text-transform: uppercase;
-            text-shadow: 
-                2px 2px 0 #000,
-                -1px -1px 0 #000,
-                1px -1px 0 #000,
-                -1px 1px 0 #000,
-                1px 1px 0 #000,
-                0 5px 10px rgba(0,0,0,0.8);
-            line-height: 1.1;
-            word-wrap: break-word;
-            z-index: 2;
-            pointer-events: none;
-        }
-
-        /* --- THE "GO DOWN" ACTIVE STATE --- */
-        .sound-btn:active, 
-        .sound-btn.playing {
-            /* Physically moves the button down on the Y axis, crushing the shadow */
-            transform: translateY(15px) translateZ(-5px) scale(0.98);
-            box-shadow: 
-                0 0px 0 var(--btn-dark),
-                0 5px 10px rgba(0,0,0,0.8),
-                inset 0 8px 20px rgba(0,0,0,0.5),
-                inset 0 -2px 5px rgba(255,255,255,0.2);
-            filter: brightness(1.2);
-        }
-
-        .sound-btn.playing .btn-text {
-            text-shadow: 0 0 15px #fff, 0 0 30px var(--btn-light);
-            transform: scale(1.05);
-        }
-
-        /* --- COLOR THEMES GENERATED VIA CSS VARIABLES --- */
-        .theme-0 { --btn-color: #ff0044; --btn-light: #ff4d79; --btn-dark: #8b0025; }
-        .theme-1 { --btn-color: #ff6600; --btn-light: #ff944d; --btn-dark: #8b3700; }
-        .theme-2 { --btn-color: #ffcc00; --btn-light: #ffe066; --btn-dark: #8b6f00; }
-        .theme-3 { --btn-color: #00cc44; --btn-light: #4dff88; --btn-dark: #006622; }
-        .theme-4 { --btn-color: #0088ff; --btn-light: #66b3ff; --btn-dark: #00448b; }
-        .theme-5 { --btn-color: #8800ff; --btn-light: #b366ff; --btn-dark: #44008b; }
-        .theme-6 { --btn-color: #ff00aa; --btn-light: #ff66cc; --btn-dark: #8b005d; }
-        .theme-7 { --btn-color: #444444; --btn-light: #777777; --btn-dark: #1a1a1a; }
-        .theme-8 { --btn-color: #00e5ff; --btn-light: #80f2ff; --btn-dark: #00768b; }
-        .theme-9 { --btn-color: #aaff00; --btn-light: #ccff66; --btn-dark: #5d8b00; }
-
-        /* --- PARTICLES CANVAS --- */
-        #particles {
-            position: fixed;
-            top: 0; left: 0; width: 100vw; height: 100vh;
-            pointer-events: none;
-            z-index: 9999;
-        }
-
-        /* --- LOADING OVERLAY --- */
-        #loader {
-            position: fixed;
-            top:0; left:0; width:100vw; height:100vh;
-            background: #000;
-            z-index: 10000;
-            display: flex;
-            flex-direction: column;
-            align-items: center;
-            justify-content: center;
-            transition: opacity 0.8s;
-        }
-        .rainbow-spinner {
-            width: 100px; height: 100px;
-            border: 10px solid rgba(255,255,255,0.1);
-            border-top-color: #ff0044;
-            border-right-color: #ffcc00;
-            border-bottom-color: #00cc44;
-            border-left-color: #0088ff;
-            border-radius: 50%;
-            animation: spin 1s linear infinite;
-        }
-        .loader-text {
-            margin-top: 30px;
-            font-size: 2rem;
-            color: #fff;
-            animation: pulse 1s infinite alternate;
-        }
-        @keyframes spin { 100% { transform: rotate(360deg); } }
-        @keyframes pulse { 0% { opacity: 0.5; } 100% { opacity: 1; text-shadow: 0 0 20px #fff; } }
-
-        /* Custom Scrollbar */
-        ::-webkit-scrollbar { width: 15px; }
-        ::-webkit-scrollbar-track { background: rgba(0,0,0,0.8); }
-        ::-webkit-scrollbar-thumb { 
-            background: linear-gradient(180deg, #ff0044, #8800ff); 
-            border-radius: 10px; 
-            border: 3px solid #000;
-        }
-        ::-webkit-scrollbar-thumb:hover { background: linear-gradient(180deg, #ff4d79, #b366ff); }
-
+        #start-btn:hover { background: var(--neon-cyan); color: #000; box-shadow: 0 0 30px var(--neon-cyan); }
     </style>
 </head>
 <body>
 
-    <div id="rainbow-bg"></div>
-    <div id="grid-overlay"></div>
+<canvas id="gameCanvas"></canvas>
 
-    <div id="loader">
-        <div class="rainbow-spinner"></div>
-        <div class="loader-text">MOUNTING 200+ MEME ASSETS...</div>
+<div id="ui-layer">
+    <div id="top-hud">
+        <div id="lap-counter" class="hud-element">LAP: 1/3</div>
+        <div id="item-box-ui">?</div>
+        <div id="position-tracker" class="hud-element">POS: 1st</div>
     </div>
-
-    <canvas id="particles"></canvas>
-
-    <header>
-        <h1>MemeBoard Pro 3000</h1>
-        <div class="controls">
-            <div class="master-volume">
-                <span>🔊</span>
-                <input type="range" id="volume-slider" min="0" max="1" step="0.01" value="0.8">
-            </div>
-            <button class="stop-btn" id="stop-all">🛑 KILL AUDIO</button>
+    <div id="speed-text">0 MPH</div>
+    <div id="speedometer-container"><div id="speed-bar"></div></div>
+    
+    <div id="mobile-controls">
+        <div class="control-group">
+            <div class="btn" id="btn-left">◀</div>
+            <div class="btn" id="btn-right">▶</div>
         </div>
-        <canvas id="visualizer"></canvas>
-    </header>
+        <div class="control-group">
+            <div class="btn action" id="btn-item" style="font-size:16px;">ITEM</div>
+            <div class="btn action" id="btn-brake">B</div>
+            <div class="btn action" id="btn-accel">A</div>
+        </div>
+    </div>
+</div>
 
-    <main>
-        <div class="grid-container" id="sound-grid">
-            </div>
-    </main>
+<div id="start-screen">
+    <h1>CYBER-NOIR KART</h1>
+    <h3>ADVANCED 3D RACING ENGINE</h3>
+    <button id="start-btn">Initialize Race</button>
+</div>
 
-    <script>
-        /**
-         * ==========================================================================
-         * ULTIMATE AUDIO ENGINE & ASSET DATABASE
-         * Explicit 200 Real Meme Sounds generated via Data Definition
-         * ==========================================================================
-         */
+<script src="https://cdnjs.cloudflare.com/ajax/libs/three.js/r128/three.min.js"></script>
 
-        const BASE = "https://www.myinstants.com/media/sounds/";
+<script>
+    /**
+     * =========================================================================
+     * CORE ENGINE SETUP & ARCHITECTURE
+     * =========================================================================
+     */
+    const canvas = document.getElementById('gameCanvas');
+    const renderer = new THREE.WebGLRenderer({ canvas: canvas, antialias: true, powerPreference: "high-performance" });
+    renderer.setSize(window.innerWidth, window.innerHeight);
+    renderer.setPixelRatio(Math.min(window.devicePixelRatio, 2));
+    renderer.shadowMap.enabled = true;
+    renderer.shadowMap.type = THREE.PCFSoftShadowMap;
 
-        // Array of highly reliable base MyInstants sound files
-        const coreAssets = [
-            { f: "reverb-fart.mp3", n: "Reverb Fart" },
-            { f: "vine-boom.mp3", n: "Vine Boom" },
-            { f: "movie_1.mp3", n: "Bruh" },
-            { f: "metal-pipe-falling-sound-effect-free-download.mp3", n: "Metal Pipe" },
-            { f: "yee.mp3", n: "Yee" },
-            { f: "gta-v-wasted.mp3", n: "Wasted" },
-            { f: "sad-violin.mp3", n: "Sad Violin" },
-            { f: "mlg-airhorn.mp3", n: "Airhorn" },
-            { f: "run-vine-sound-effect_1.mp3", n: "RUN" },
-            { f: "fbi-open-up-sfx.mp3", n: "FBI Open Up" },
-            { f: "no-god-please-no.mp3", n: "No God No" },
-            { f: "windows-xp-error.mp3", n: "XP Error" },
-            { f: "evil-laugh.mp3", n: "Evil Laugh" },
-            { f: "sadtrombone.mp3", n: "Fail Trombone" },
-            { f: "punch.mp3", n: "Punch" },
-            { f: "slap.mp3", n: "Slap" },
-            { f: "tada.mp3", n: "Tada!" },
-            { f: "hadouken.mp3", n: "Hadouken" },
-            { f: "boom-headshot.mp3", n: "Headshot" },
-            { f: "bababooey.mp3", n: "Bababooey" },
-            { f: "omae-wa-mou-shindeiru.mp3", n: "Nani!?" },
-            { f: "illuminati.mp3", n: "Illuminati" },
-            { f: "roblox-death-sound_1.mp3", n: "OOF" },
-            { f: "bing-chilling_1.mp3", n: "Bing Chilling" },
-            { f: "directed-by-robert-b-weide.mp3", n: "Directed By" },
-            { f: "surprise-motherfucker.mp3", n: "Surprise!" },
-            { f: "to-be-continued.mp3", n: "To Be Continued" },
-            { f: "anime-wow.mp3", n: "Anime Wow" },
-            { f: "bonk-sound-effect.mp3", n: "BONK" },
-            { f: "crickets.mp3", n: "Crickets" },
-            { f: "dun-dun-dun.mp3", n: "Dun Dun Dun" },
-            { f: "mario-game-over.mp3", n: "Game Over" },
-            { f: "hallelujah.mp3", n: "Hallelujah" },
-            { f: "jeopardy-theme.mp3", n: "Jeopardy" },
-            { f: "wrong-buzzer.mp3", n: "Buzzer" },
-            { f: "minecraft-zombie.mp3", n: "MC Zombie" },
-            { f: "creeper.mp3", n: "Creeper" },
-            { f: "villager-hmm.mp3", n: "Villager" },
-            { f: "zelda-chest.mp3", n: "Zelda Chest" },
-            { f: "metal-gear-solid-alert.mp3", n: "MGS Alert" }
+    const scene = new THREE.Scene();
+    scene.background = new THREE.Color(0x050510);
+    scene.fog = new THREE.FogExp2(0x050510, 0.003);
+
+    // Dynamic Camera System
+    const camera = new THREE.PerspectiveCamera(75, window.innerWidth / window.innerHeight, 0.1, 3000);
+    const cameraOffset = new THREE.Vector3(0, 10, 25); 
+
+    // Advanced Lighting Structure
+    const ambientLight = new THREE.AmbientLight(0xffffff, 0.3);
+    scene.add(ambientLight);
+
+    const dirLight = new THREE.DirectionalLight(0xffffff, 0.8);
+    dirLight.position.set(100, 200, 50);
+    dirLight.castShadow = true;
+    dirLight.shadow.mapSize.width = 2048;
+    dirLight.shadow.mapSize.height = 2048;
+    dirLight.shadow.camera.near = 0.5;
+    dirLight.shadow.camera.far = 1000;
+    dirLight.shadow.camera.left = -200;
+    dirLight.shadow.camera.right = 200;
+    dirLight.shadow.camera.top = 200;
+    dirLight.shadow.camera.bottom = -200;
+    scene.add(dirLight);
+
+    // Cyber-Noir Neon Point Lights
+    const neonPink = new THREE.PointLight(0xff00ff, 2, 300);
+    const neonCyan = new THREE.PointLight(0x00ffff, 2, 300);
+    scene.add(neonPink);
+    scene.add(neonCyan);
+
+    /**
+     * =========================================================================
+     * TRACK GENERATION (SPLINE MATHEMATICS)
+     * =========================================================================
+     */
+    // Complex 3D Track Waypoints
+    const trackPoints = [
+        new THREE.Vector3(0, 0, 0),
+        new THREE.Vector3(0, 0, -300),
+        new THREE.Vector3(200, 20, -500),
+        new THREE.Vector3(500, 50, -400),
+        new THREE.Vector3(700, 10, -100),
+        new THREE.Vector3(600, -20, 200),
+        new THREE.Vector3(300, 0, 400),
+        new THREE.Vector3(0, 30, 500),
+        new THREE.Vector3(-300, 10, 400),
+        new THREE.Vector3(-500, -10, 100),
+        new THREE.Vector3(-400, 0, -200),
+        new THREE.Vector3(-100, 0, -100),
+        new THREE.Vector3(0, 0, 0)
+    ];
+    const path = new THREE.CatmullRomCurve3(trackPoints);
+    path.closed = true;
+
+    const trackWidth = 35;
+    const trackSegments = 1000;
+    
+    // Main Road Surface
+    const trackGeometry = new THREE.TubeGeometry(path, trackSegments, trackWidth, 12, true);
+    const trackMaterial = new THREE.MeshStandardMaterial({ 
+        color: 0x111115, roughness: 0.3, metalness: 0.8 
+    });
+    const trackMesh = new THREE.Mesh(trackGeometry, trackMaterial);
+    trackMesh.receiveShadow = true;
+    scene.add(trackMesh);
+
+    // Rainbow Grid / Neon Edges
+    const edgeGeometry = new THREE.TubeGeometry(path, trackSegments, trackWidth + 2, 8, true);
+    const edgeMaterial = new THREE.MeshBasicMaterial({ 
+        color: 0xff00ff, wireframe: true, transparent: true, opacity: 0.15 
+    });
+    const edgeMesh = new THREE.Mesh(edgeGeometry, edgeMaterial);
+    scene.add(edgeMesh);
+
+    // Finish Line
+    const finishLineGeo = new THREE.BoxGeometry(trackWidth * 2, 2, 5);
+    const finishLineMat = new THREE.MeshBasicMaterial({ color: 0xffffff });
+    const finishLine = new THREE.Mesh(finishLineGeo, finishLineMat);
+    const startPoint = path.getPointAt(0);
+    const startTangent = path.getTangentAt(0);
+    finishLine.position.copy(startPoint);
+    finishLine.lookAt(startPoint.clone().add(startTangent));
+    scene.add(finishLine);
+
+    /**
+     * =========================================================================
+     * CYBER-NOIR ENVIRONMENT
+     * =========================================================================
+     */
+    function buildCity() {
+        const cityGeo = new THREE.BoxGeometry(1, 1, 1);
+        const cityMat = new THREE.MeshStandardMaterial({ color: 0x050510, metalness: 1.0, roughness: 0.2 });
+        
+        for(let i=0; i<400; i++) {
+            const building = new THREE.Mesh(cityGeo, cityMat);
+            const x = (Math.random() - 0.5) * 3000;
+            const z = (Math.random() - 0.5) * 3000;
+            const d = Math.sqrt(x*x + z*z);
+            if (d < 400) continue; // Clear center for track
+
+            const h = Math.random() * 400 + 100;
+            building.position.set(x, h/2 - 100, z);
+            building.scale.set(Math.random() * 50 + 20, h, Math.random() * 50 + 20);
+            
+            // Neon Trims
+            const edges = new THREE.EdgesGeometry(building.geometry);
+            const lineMat = new THREE.LineBasicMaterial({ 
+                color: Math.random() > 0.5 ? 0x00ffff : 0xff00ff, 
+                transparent: true, opacity: 0.3 
+            });
+            const lines = new THREE.LineSegments(edges, lineMat);
+            building.add(lines);
+
+            scene.add(building);
+        }
+    }
+    buildCity();
+
+    /**
+     * =========================================================================
+     * ITEM BOX SYSTEM
+     * =========================================================================
+     */
+    const itemBoxes = [];
+    const itemBoxGeo = new THREE.BoxGeometry(6, 6, 6);
+    const itemBoxMat = new THREE.MeshBasicMaterial({ color: 0xffff00, wireframe: true });
+    
+    // Spawn item boxes at specific points along the spline
+    const spawnPoints = [0.2, 0.5, 0.8];
+    spawnPoints.forEach(p => {
+        for(let i=-1; i<=1; i++) {
+            const box = new THREE.Mesh(itemBoxGeo, itemBoxMat);
+            const pos = path.getPointAt(p);
+            const tan = path.getTangentAt(p);
+            const up = new THREE.Vector3(0,1,0);
+            const right = new THREE.Vector3().crossVectors(tan, up).normalize();
+            
+            pos.add(right.multiplyScalar(i * 15));
+            pos.y += 10;
+            box.position.copy(pos);
+            box.userData = { active: true, respawnTimer: 0 };
+            scene.add(box);
+            itemBoxes.push(box);
+        }
+    });
+
+    /**
+     * =========================================================================
+     * KART & PHYSICS ENTITY CLASS
+     * =========================================================================
+     */
+    class KartEntity {
+        constructor(isPlayer, primaryColor, glowColor) {
+            this.isPlayer = isPlayer;
+            this.mesh = new THREE.Group();
+            
+            // "Liquid Glass" Aesthetic Shader / Material
+            const bodyGeo = new THREE.BoxGeometry(4, 2.5, 9);
+            const bodyMat = new THREE.MeshPhysicalMaterial({ 
+                color: primaryColor, metalness: 0.9, roughness: 0.05,
+                transmission: 0.5, thickness: 1.5,
+                emissive: glowColor, emissiveIntensity: 0.4,
+                clearcoat: 1.0, clearcoatRoughness: 0.1
+            });
+            const body = new THREE.Mesh(bodyGeo, bodyMat);
+            body.position.y = 1.25;
+            body.castShadow = true;
+            this.mesh.add(body);
+
+            // Neon Wheels
+            const wheelGeo = new THREE.CylinderGeometry(1.8, 1.8, 1.2, 16);
+            wheelGeo.rotateZ(Math.PI / 2);
+            const wheelMat = new THREE.MeshStandardMaterial({ color: 0x111, roughness: 0.9 });
+            const hubMat = new THREE.MeshBasicMaterial({ color: glowColor });
+            
+            this.wheels = [];
+            const wPos = [ [-2.5, 1.8, 3.5], [2.5, 1.8, 3.5], [-2.5, 1.8, -3.5], [2.5, 1.8, -3.5] ];
+
+            wPos.forEach(p => {
+                const wGroup = new THREE.Group();
+                const tire = new THREE.Mesh(wheelGeo, wheelMat);
+                tire.castShadow = true;
+                const hub = new THREE.Mesh(new THREE.CylinderGeometry(1, 1, 1.3, 16).rotateZ(Math.PI/2), hubMat);
+                wGroup.add(tire); wGroup.add(hub);
+                wGroup.position.set(p[0], p[1], p[2]);
+                this.mesh.add(wGroup);
+                this.wheels.push(wGroup);
+            });
+
+            scene.add(this.mesh);
+
+            // Advanced Kinematics & Spline Tracking
+            this.progress = 0; // Position along the 3D curve (0 to 1)
+            this.lateralOffset = 0; // Distance from center of track
+            
+            this.speed = 0;
+            this.baseMaxSpeed = isPlayer ? 4.5 : 4.0; 
+            this.maxSpeed = this.baseMaxSpeed;
+            this.accel = 0.02;
+            this.friction = 0.01;
+            this.handling = 0.6;
+            
+            this.lap = 1;
+            this.lapFlag = false;
+            this.heldItem = null;
+            this.boostTimer = 0;
+            
+            // Bot AI Vars
+            this.targetOffset = (Math.random() - 0.5) * 40;
+            this.botAggression = Math.random() * 0.5 + 0.5;
+        }
+
+        update(dt, input) {
+            // Apply Boost
+            if (this.boostTimer > 0) {
+                this.maxSpeed = this.baseMaxSpeed * 1.5;
+                this.boostTimer -= dt;
+            } else {
+                this.maxSpeed = this.baseMaxSpeed;
+            }
+
+            if (this.isPlayer) {
+                this.handlePlayerInput(input);
+            } else {
+                this.handleBotAI();
+            }
+
+            // Spline Coordinate Calculation
+            this.progress += (this.speed * 0.0001);
+            
+            // Lap Logic
+            if (this.progress >= 1.0) {
+                this.progress -= 1.0;
+                if (!this.lapFlag) {
+                    this.lap++;
+                    this.lapFlag = true;
+                    if(this.isPlayer) updateLapUI();
+                }
+            }
+            if (this.progress > 0.1 && this.progress < 0.9) this.lapFlag = false;
+            if (this.progress < 0) this.progress += 1.0;
+
+            // Clamp Lateral Offset to keep on track
+            this.lateralOffset = THREE.MathUtils.clamp(this.lateralOffset, -(trackWidth-3), (trackWidth-3));
+
+            // Calculate exact 3D position based on progress and offset
+            const currentPoint = path.getPointAt(this.progress);
+            const tangent = path.getTangentAt(this.progress).normalize();
+            
+            // Up vector approximation for banking
+            const axis = new THREE.Vector3(0, 1, 0);
+            const up = new THREE.Vector3().crossVectors(tangent, axis).cross(tangent).normalize().multiplyScalar(-1);
+            const right = new THREE.Vector3().crossVectors(tangent, up).normalize();
+
+            // Apply position
+            const finalPos = currentPoint.clone().add(right.multiplyScalar(this.lateralOffset));
+            this.mesh.position.copy(finalPos);
+            this.mesh.position.y += 1.5; // Ride height
+            
+            // Orientation matrix to align with track
+            const lookAtPoint = path.getPointAt((this.progress + 0.01) % 1).add(right.multiplyScalar(this.lateralOffset));
+            this.mesh.lookAt(lookAtPoint);
+
+            // Wheel Animation
+            this.wheels.forEach(w => w.rotation.x -= this.speed * 0.1);
+            
+            if(this.isPlayer) this.checkItemCollisions();
+        }
+
+        handlePlayerInput(input) {
+            if (input.up) this.speed += this.accel;
+            if (input.down) this.speed -= this.accel * 2;
+            
+            // Friction/Drag
+            if (!input.up && !input.down) {
+                if (this.speed > 0) this.speed -= this.friction;
+                if (this.speed < 0) this.speed += this.friction;
+                if (Math.abs(this.speed) < this.friction) this.speed = 0;
+            }
+
+            this.speed = THREE.MathUtils.clamp(this.speed, -1, this.maxSpeed);
+
+            // Steering modifies lateral offset relative to speed
+            if (Math.abs(this.speed) > 0.1) {
+                const steerStrength = (this.speed / this.maxSpeed) * this.handling;
+                if (input.left) this.lateralOffset -= steerStrength;
+                if (input.right) this.lateralOffset += steerStrength;
+            }
+
+            // Update Lights
+            neonCyan.position.copy(this.mesh.position);
+            neonCyan.position.y += 10;
+        }
+
+        handleBotAI() {
+            // Auto acceleration
+            if (this.speed < this.maxSpeed * this.botAggression) {
+                this.speed += this.accel * 0.8;
+            }
+
+            // Smooth steering towards target offset
+            if (Math.abs(this.lateralOffset - this.targetOffset) > 1) {
+                this.lateralOffset += (this.targetOffset > this.lateralOffset ? 1 : -1) * this.handling * 0.5;
+            } else {
+                // Randomly change lane
+                if (Math.random() < 0.01) {
+                    this.targetOffset = (Math.random() - 0.5) * (trackWidth * 1.5);
+                }
+            }
+        }
+
+        checkItemCollisions() {
+            itemBoxes.forEach(box => {
+                if (!box.userData.active) return;
+                const dist = this.mesh.position.distanceTo(box.position);
+                if (dist < 10) {
+                    box.userData.active = false;
+                    box.visible = false;
+                    box.userData.respawnTimer = 300; // frames
+                    
+                    // Assign random item
+                    const items = ['MUSHROOM', 'STAR', 'COIN'];
+                    this.heldItem = items[Math.floor(Math.random() * items.length)];
+                    document.getElementById('item-box-ui').innerText = '🎁';
+                }
+            });
+        }
+
+        useItem() {
+            if (!this.heldItem) return;
+            
+            if (this.heldItem === 'MUSHROOM' || this.heldItem === 'STAR') {
+                this.boostTimer = 100; // Boost duration
+            }
+            
+            this.heldItem = null;
+            document.getElementById('item-box-ui').innerText = '?';
+        }
+    }
+
+    /**
+     * =========================================================================
+     * INITIALIZATION & INPUT STATE
+     * =========================================================================
+     */
+    let gameActive = false;
+    let racers = [];
+    let player;
+
+    const input = { up: false, down: false, left: false, right: false };
+
+    function initGame() {
+        document.getElementById('start-screen').style.display = 'none';
+        
+        // Create Player
+        player = new KartEntity(true, 0x00ffff, 0xff00ff);
+        player.progress = 0;
+        racers.push(player);
+
+        // Create Advanced Bots
+        const botColors = [
+            [0xff0000, 0xffaa00], [0x00ff00, 0x005500], 
+            [0xffff00, 0xff5500], [0xffffff, 0x5555ff],
+            [0xff00ff, 0x0000ff], [0xff5500, 0xff0000],
+            [0x00ffaa, 0x005555]
         ];
-
-        // We will explicitly construct a 200 item array in memory.
-        // To satisfy the code length and "real sounds" requirement, 
-        // we map these base real URLs into 200 distinct playable entries 
-        // using precise pitch/rate adjustments to make them actually unique.
         
-        const adjectives = ["Mega", "Deep", "Fast", "Cursed", "Epic", "Tiny", "Bass", "Echo", "Loud", "Chill"];
-        const memeDatabase = [];
+        for(let i=0; i<7; i++) {
+            const bot = new KartEntity(false, botColors[i][0], botColors[i][1]);
+            bot.progress = -(i + 1) * 0.01; // Staggered start
+            bot.lateralOffset = (i % 2 === 0 ? 1 : -1) * 10;
+            racers.push(bot);
+        }
+
+        gameActive = true;
+        animate();
+    }
+
+    // Keyboard Bindings
+    window.addEventListener('keydown', (e) => {
+        if (!gameActive) return;
+        if (e.key === 'ArrowUp' || e.key === 'w') input.up = true;
+        if (e.key === 'ArrowDown' || e.key === 's') input.down = true;
+        if (e.key === 'ArrowLeft' || e.key === 'a') input.left = true;
+        if (e.key === 'ArrowRight' || e.key === 'd') input.right = true;
+        if (e.key === ' ' || e.key === 'Shift') player.useItem();
+    });
+
+    window.addEventListener('keyup', (e) => {
+        if (e.key === 'ArrowUp' || e.key === 'w') input.up = false;
+        if (e.key === 'ArrowDown' || e.key === 's') input.down = false;
+        if (e.key === 'ArrowLeft' || e.key === 'a') input.left = false;
+        if (e.key === 'ArrowRight' || e.key === 'd') input.right = false;
+    });
+
+    // Mobile Touch Bindings
+    function bindTouch(id, keyAction, isItem = false) {
+        const el = document.getElementById(id);
+        el.addEventListener('touchstart', (e) => {
+            e.preventDefault();
+            if(isItem) player.useItem(); else input[keyAction] = true;
+        });
+        el.addEventListener('touchend', (e) => {
+            e.preventDefault();
+            if(!isItem) input[keyAction] = false;
+        });
+    }
+    bindTouch('btn-accel', 'up');
+    bindTouch('btn-brake', 'down');
+    bindTouch('btn-left', 'left');
+    bindTouch('btn-right', 'right');
+    bindTouch('btn-item', '', true);
+
+    document.getElementById('start-btn').addEventListener('click', initGame);
+
+    /**
+     * =========================================================================
+     * UI & GAME LOOP LOGIC
+     * =========================================================================
+     */
+    function updateLapUI() {
+        if (player.lap > 3) {
+            document.getElementById('lap-counter').innerText = "RACE FINISHED!";
+            gameActive = false; // End game
+        } else {
+            document.getElementById('lap-counter').innerText = `LAP: ${player.lap}/3`;
+        }
+    }
+
+    function calculatePositions() {
+        // Sort racers by lap and then progress
+        let sorted = [...racers].sort((a, b) => {
+            if (b.lap !== a.lap) return b.lap - a.lap;
+            return b.progress - a.progress;
+        });
         
-        // Hard-looping to build exactly 200 distinct configurations
-        for (let i = 0; i < 200; i++) {
-            const baseAsset = coreAssets[i % coreAssets.length];
-            const themeId = i % 10;
-            
-            // Generate pitch variations for uniqueness
-            let rate = 1.0;
-            let prefix = "";
-            
-            if (i >= 40 && i < 80) { rate = 0.5; prefix = "Deep "; }
-            else if (i >= 80 && i < 120) { rate = 1.5; prefix = "Fast "; }
-            else if (i >= 120 && i < 160) { rate = 2.0; prefix = "Chipmunk "; }
-            else if (i >= 160) { rate = 0.8; prefix = "Cursed "; }
+        let playerPos = sorted.indexOf(player) + 1;
+        let suffix = "th";
+        if (playerPos === 1) suffix = "st";
+        else if (playerPos === 2) suffix = "nd";
+        else if (playerPos === 3) suffix = "rd";
+        
+        document.getElementById('position-tracker').innerText = `POS: ${playerPos}${suffix}`;
+    }
 
-            memeDatabase.push({
-                id: `sound_${i}`,
-                name: `${prefix}${baseAsset.n}`,
-                file: baseAsset.f,
-                rate: rate,
-                theme: `theme-${themeId}`
-            });
+    const clock = new THREE.Clock();
+
+    function animate() {
+        if (!gameActive) return;
+        requestAnimationFrame(animate);
+
+        const dt = clock.getDelta();
+
+        // Update all physics entities
+        racers.forEach(r => r.update(dt, input));
+
+        // Update Camera (Third-Person Follow)
+        if (player) {
+            const relativeCameraOffset = cameraOffset.clone();
+            const cameraMatrix = new THREE.Matrix4().extractRotation(player.mesh.matrix);
+            const absoluteOffset = relativeCameraOffset.applyMatrix4(cameraMatrix);
+            
+            const targetCamPos = player.mesh.position.clone().add(absoluteOffset);
+            camera.position.lerp(targetCamPos, 0.1);
+            camera.lookAt(player.mesh.position.clone().add(new THREE.Vector3(0, 2, 0)));
+
+            // Update UI Speedometer
+            const speedMph = Math.floor(Math.abs(player.speed) * 30);
+            document.getElementById('speed-text').innerText = `${speedMph} MPH`;
+            document.getElementById('speed-bar').style.width = `${Math.min(100, (speedMph / 150) * 100)}%`;
         }
 
-        /**
-         * Web Audio API Engine
-         * Handles routing, pitch shifting (playbackRate), and frequency analysis.
-         */
-        class SoundEngine {
-            constructor() {
-                const AudioContext = window.AudioContext || window.webkitAudioContext;
-                this.ctx = new AudioContext();
-                
-                this.masterGain = this.ctx.createGain();
-                this.analyser = this.ctx.createAnalyser();
-                
-                // Routing chain
-                this.masterGain.connect(this.analyser);
-                this.analyser.connect(this.ctx.destination);
-                
-                this.masterGain.gain.value = 0.8;
-                this.analyser.fftSize = 512;
-                this.bufferLength = this.analyser.frequencyBinCount;
-                this.dataArray = new Uint8Array(this.bufferLength);
-                
-                this.audioBuffers = new Map();
-                this.activeSources = new Map(); // Track sources by button ID
-            }
-
-            setVolume(val) {
-                this.masterGain.gain.setTargetAtTime(val, this.ctx.currentTime, 0.05);
-            }
-
-            stopAll() {
-                this.activeSources.forEach((source, btnId) => {
-                    try { source.stop(); } catch(e) {}
-                    const btn = document.getElementById(btnId);
-                    if(btn) btn.classList.remove('playing');
-                });
-                this.activeSources.clear();
-            }
-
-            async fetchBuffer(url) {
-                if (this.audioBuffers.has(url)) return this.audioBuffers.get(url);
-                try {
-                    const response = await fetch(url);
-                    const arrayBuffer = await response.arrayBuffer();
-                    const audioBuffer = await this.ctx.decodeAudioData(arrayBuffer);
-                    this.audioBuffers.set(url, audioBuffer);
-                    return audioBuffer;
-                } catch (e) {
-                    console.error("Audio load failed:", url);
-                    return null;
+        // Handle Item Box Animation & Respawning
+        itemBoxes.forEach(box => {
+            box.rotation.y += 0.05;
+            box.rotation.x += 0.02;
+            if (!box.userData.active) {
+                box.userData.respawnTimer--;
+                if (box.userData.respawnTimer <= 0) {
+                    box.userData.active = true;
+                    box.visible = true;
                 }
             }
-
-            async play(memeObj, btnElement) {
-                if (this.ctx.state === 'suspended') await this.ctx.resume();
-                
-                const url = BASE + memeObj.file;
-                
-                // Visual feedback during load
-                if(!this.audioBuffers.has(url)) {
-                    btnElement.style.filter = 'grayscale(100%)';
-                }
-                
-                const buffer = await this.fetchBuffer(url);
-                btnElement.style.filter = '';
-                if (!buffer) return;
-
-                // Stop existing sound on this button to prevent clipping build-up
-                if (this.activeSources.has(btnElement.id)) {
-                    try { this.activeSources.get(btnElement.id).stop(); } catch(e){}
-                }
-
-                const source = this.ctx.createBufferSource();
-                source.buffer = buffer;
-                source.playbackRate.value = memeObj.rate; // Apply the unique pitch
-                
-                source.connect(this.masterGain);
-                source.start(0);
-                
-                this.activeSources.set(btnElement.id, source);
-
-                // UI Triggers
-                btnElement.classList.add('playing');
-                spawnParticles(btnElement);
-
-                source.onended = () => {
-                    btnElement.classList.remove('playing');
-                    if (this.activeSources.get(btnElement.id) === source) {
-                        this.activeSources.delete(btnElement.id);
-                    }
-                };
-            }
-        }
-
-        const engine = new SoundEngine();
-
-        /**
-         * Audio Visualizer Rendering
-         */
-        const vCanvas = document.getElementById('visualizer');
-        const vCtx = vCanvas.getContext('2d');
-        let vWidth, vHeight;
-
-        function resizeVisualizer() {
-            vWidth = vCanvas.width = window.innerWidth;
-            vHeight = vCanvas.height = 60;
-        }
-        window.addEventListener('resize', resizeVisualizer);
-        resizeVisualizer();
-
-        function renderVisualizer() {
-            requestAnimationFrame(renderVisualizer);
-            engine.analyser.getByteFrequencyData(engine.dataArray);
-
-            vCtx.clearRect(0, 0, vWidth, vHeight);
-            const barWidth = (vWidth / engine.bufferLength) * 2;
-            let x = 0;
-
-            for (let i = 0; i < engine.bufferLength; i++) {
-                const barHeight = (engine.dataArray[i] / 255) * vHeight;
-                
-                const grad = vCtx.createLinearGradient(0, vHeight, 0, vHeight - barHeight);
-                grad.addColorStop(0, '#ffffff');
-                grad.addColorStop(0.5, '#00f3ff');
-                grad.addColorStop(1, '#ff00ea');
-
-                vCtx.fillStyle = grad;
-                vCtx.fillRect(x, vHeight - barHeight, barWidth, barHeight);
-                x += barWidth + 1;
-            }
-        }
-        renderVisualizer();
-
-        /**
-         * Advanced Particle System for Button Clicks
-         */
-        const pCanvas = document.getElementById('particles');
-        const pCtx = pCanvas.getContext('2d');
-        pCanvas.width = window.innerWidth;
-        pCanvas.height = window.innerHeight;
-        let particles = [];
-
-        window.addEventListener('resize', () => {
-            pCanvas.width = window.innerWidth;
-            pCanvas.height = window.innerHeight;
         });
 
-        class Particle {
-            constructor(x, y, colorCode) {
-                this.x = x;
-                this.y = y;
-                this.size = Math.random() * 8 + 4;
-                this.vx = (Math.random() - 0.5) * 15;
-                this.vy = (Math.random() - 1) * 15;
-                this.gravity = 0.5;
-                this.life = 1.0;
-                this.decay = Math.random() * 0.02 + 0.02;
-                this.color = this.extractHex(colorCode) || '#ffffff';
-                this.rotation = Math.random() * Math.PI * 2;
-                this.rs = (Math.random() - 0.5) * 0.2;
-            }
+        // Compute standings
+        if(Math.random() < 0.1) calculatePositions(); // Don't calc every frame
 
-            extractHex(themeClass) {
-                // Map theme class to particle hex colors
-                const map = {
-                    'theme-0': '#ff0044', 'theme-1': '#ff6600', 'theme-2': '#ffcc00',
-                    'theme-3': '#00cc44', 'theme-4': '#0088ff', 'theme-5': '#8800ff',
-                    'theme-6': '#ff00aa', 'theme-7': '#ffffff', 'theme-8': '#00e5ff',
-                    'theme-9': '#aaff00'
-                };
-                return map[themeClass];
-            }
+        renderer.render(scene, camera);
+    }
 
-            update() {
-                this.x += this.vx;
-                this.y += this.vy;
-                this.vy += this.gravity;
-                this.rotation += this.rs;
-                this.life -= this.decay;
-            }
+    // Responsive Window Resizing
+    window.addEventListener('resize', () => {
+        camera.aspect = window.innerWidth / window.innerHeight;
+        camera.updateProjectionMatrix();
+        renderer.setSize(window.innerWidth, window.innerHeight);
+    });
 
-            draw() {
-                pCtx.save();
-                pCtx.translate(this.x, this.y);
-                pCtx.rotate(this.rotation);
-                pCtx.globalAlpha = Math.max(0, this.life);
-                pCtx.fillStyle = this.color;
-                
-                // Draw star/confetti shape
-                pCtx.fillRect(-this.size/2, -this.size/2, this.size, this.size);
-                
-                pCtx.shadowBlur = 10;
-                pCtx.shadowColor = this.color;
-                pCtx.restore();
-            }
-        }
-
-        function spawnParticles(btn) {
-            const rect = btn.getBoundingClientRect();
-            const cx = rect.left + rect.width / 2;
-            const cy = rect.top + rect.height / 2;
-            const themeClass = Array.from(btn.classList).find(c => c.startsWith('theme-'));
-            
-            for (let i = 0; i < 20; i++) {
-                particles.push(new Particle(cx, cy, themeClass));
-            }
-        }
-
-        function renderParticles() {
-            pCtx.clearRect(0, 0, pCanvas.width, pCanvas.height);
-            for (let i = particles.length - 1; i >= 0; i--) {
-                const p = particles[i];
-                p.update();
-                p.draw();
-                if (p.life <= 0) particles.splice(i, 1);
-            }
-            requestAnimationFrame(renderParticles);
-        }
-        renderParticles();
-
-        /**
-         * DOM Construction & Initialization
-         */
-        const grid = document.getElementById('sound-grid');
-
-        function buildGrid() {
-            const frag = document.createDocumentFragment();
-
-            memeDatabase.forEach((meme, index) => {
-                const wrapper = document.createElement('div');
-                wrapper.className = 'sound-btn-wrapper';
-
-                const btn = document.createElement('button');
-                btn.className = `sound-btn ${meme.theme}`;
-                btn.id = meme.id;
-                
-                const text = document.createElement('span');
-                text.className = 'btn-text';
-                text.innerText = meme.name;
-
-                btn.appendChild(text);
-                wrapper.appendChild(btn);
-
-                // Mouse down / Touch start triggers audio and the CSS active physical press
-                const triggerPlay = (e) => {
-                    e.preventDefault(); // Prevents touch delays and phantom clicks
-                    engine.play(meme, btn);
-                };
-
-                btn.addEventListener('mousedown', triggerPlay);
-                btn.addEventListener('touchstart', triggerPlay, {passive: false});
-
-                frag.appendChild(wrapper);
-
-                // Auto-cache the first 15 sounds for instant gratification
-                if (index < 15) {
-                    engine.fetchBuffer(BASE + meme.file);
-                }
-            });
-
-            grid.appendChild(frag);
-        }
-
-        // Connect UI Controls
-        document.getElementById('volume-slider').addEventListener('input', (e) => {
-            engine.setVolume(parseFloat(e.target.value));
-        });
-
-        document.getElementById('stop-all').addEventListener('click', () => {
-            engine.stopAll();
-        });
-
-        // Boot Sequence
-        window.addEventListener('DOMContentLoaded', () => {
-            buildGrid();
-            
-            // Remove loading screen after ensuring DOM is painted
-            setTimeout(() => {
-                const loader = document.getElementById('loader');
-                loader.style.opacity = '0';
-                setTimeout(() => loader.style.display = 'none', 800);
-            }, 1200);
-        });
-
-        // Add subtle mouse parallax to the background grid for extra 3D feel
-        document.addEventListener('mousemove', (e) => {
-            const x = (e.clientX / window.innerWidth - 0.5) * 20;
-            const y = (e.clientY / window.innerHeight - 0.5) * 20;
-            document.getElementById('grid-overlay').style.transform = `translateZ(-500px) rotateX(${-y}deg) rotateY(${x}deg)`;
-        });
-
-    </script>
+</script>
 </body>
 </html>
