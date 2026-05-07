@@ -3,11 +3,15 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
-    <title>Happy Glass Clone</title>
+    <title>Happy Glass Clone Engine</title>
     <style>
+        :root {
+            --bg: #2c3e50; --glass: rgba(255, 255, 255, 0.4); --water: #3498db;
+            --obs: #e67e22; --text: #ecf0f1; --ui-bg: rgba(0,0,0,0.85);
+        }
         body, html {
             margin: 0; padding: 0; width: 100%; height: 100%;
-            background-color: #2c3e50; overflow: hidden;
+            background-color: var(--bg); overflow: hidden;
             font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
             touch-action: none; user-select: none; -webkit-user-select: none;
         }
@@ -15,26 +19,54 @@
             position: relative; width: 100vw; height: 100vh;
             display: flex; justify-content: center; align-items: center;
         }
-        canvas { background-color: #ecf0f1; box-shadow: 0 0 20px rgba(0,0,0,0.8); max-width: 100%; max-height: 100%; }
+        canvas { 
+            background-color: #ecf0f1; box-shadow: 0 0 20px rgba(0,0,0,0.8); 
+            max-width: 100%; max-height: 100%; cursor: crosshair;
+        }
         #ui { position: absolute; top: 0; left: 0; width: 100%; height: 100%; pointer-events: none; }
-        .hud { display: flex; justify-content: space-between; padding: 20px; font-size: 24px; font-weight: bold; color: #fff; text-shadow: 2px 2px 4px #000; }
+        .hud { 
+            display: flex; justify-content: space-between; padding: 20px; 
+            font-size: 24px; font-weight: bold; color: #fff; text-shadow: 2px 2px 4px #000; 
+        }
         #lvl-txt { background: #3498db; padding: 10px 20px; border-radius: 15px; }
-        #status-txt { background: #e74c3c; padding: 10px 20px; border-radius: 15px; }
+        #status-txt { background: #e74c3c; padding: 10px 20px; border-radius: 15px; transition: background 0.3s; }
+        
         #overlay {
             position: absolute; top: 0; left: 0; width: 100%; height: 100%;
-            background: rgba(0,0,0,0.85); display: flex; flex-direction: column;
+            background: var(--ui-bg); display: flex; flex-direction: column;
             justify-content: center; align-items: center; pointer-events: auto; z-index: 50;
+            backdrop-filter: blur(5px);
         }
-        h1 { color: #f1c40f; font-size: 50px; margin: 0 0 20px 0; text-align: center; }
+        h1 { color: #f1c40f; font-size: 50px; margin: 0 0 20px 0; text-align: center; text-shadow: 0 0 10px #f1c40f; }
         p { color: #fff; font-size: 22px; text-align: center; margin-bottom: 30px; }
         button {
             padding: 15px 50px; font-size: 28px; font-weight: bold; color: #fff;
             background: #2ecc71; border: none; border-radius: 10px; cursor: pointer;
             box-shadow: 0 5px 15px rgba(46, 204, 113, 0.4); text-transform: uppercase;
+            transition: all 0.2s;
         }
+        button:hover { background: #27ae60; transform: translateY(-2px); }
         button:active { transform: scale(0.95); }
-        #progress-bar { position: absolute; top: 80px; left: 50%; transform: translateX(-50%); width: 200px; height: 20px; background: #333; border-radius: 10px; border: 2px solid #fff; display: none; }
-        #progress-fill { width: 0%; height: 100%; background: #3498db; border-radius: 8px; transition: width 0.2s; }
+        
+        #progress-bar { 
+            position: absolute; top: 80px; left: 50%; transform: translateX(-50%); 
+            width: 250px; height: 25px; background: #333; border-radius: 12px; 
+            border: 3px solid #fff; display: none; overflow: hidden; box-shadow: 0 0 10px #000;
+        }
+        #progress-fill { 
+            width: 0%; height: 100%; background: linear-gradient(90deg, #2980b9, #3498db); 
+            transition: width 0.2s ease-out; 
+        }
+        
+        #ink-bar-container {
+            position: absolute; bottom: 30px; left: 50%; transform: translateX(-50%);
+            width: 300px; height: 15px; background: rgba(0,0,0,0.5); border-radius: 10px;
+            border: 2px solid #fff;
+        }
+        #ink-fill {
+            width: 100%; height: 100%; background: #2ecc71; border-radius: 6px;
+            transition: background 0.2s;
+        }
     </style>
 </head>
 <body>
@@ -46,6 +78,7 @@
             <div id="status-txt">DRAW LINE</div>
         </div>
         <div id="progress-bar"><div id="progress-fill"></div></div>
+        <div id="ink-bar-container"><div id="ink-fill"></div></div>
     </div>
     
     <div id="overlay">
@@ -58,177 +91,360 @@
 <script src="https://cdnjs.cloudflare.com/ajax/libs/matter-js/0.19.0/matter.min.js"></script>
 
 <script>
+    /**
+     * ADVANCED 2D PHYSICS ENGINE IMPLEMENTATION (MATTER.JS)
+     * HARDCODED 20 LEVELS - EXACT GAMEPLAY REPLICATION
+     */
+
+    // --- ENGINE SETUP ---
     const Engine = Matter.Engine, Render = Matter.Render, Runner = Matter.Runner,
           Bodies = Matter.Bodies, Composite = Matter.Composite, Events = Matter.Events,
-          Vector = Matter.Vector;
+          Vector = Matter.Vector, Body = Matter.Body;
 
-    const GW = 600, GH = 800;
-    const engine = Engine.create({ positionIterations: 10, velocityIterations: 10 });
+    const GW = 600, GH = 800; // Logical Game Dimensions
+    const engine = Engine.create({ 
+        positionIterations: 12, // High precision for fluids
+        velocityIterations: 12 
+    });
+    
     const render = Render.create({
-        element: document.getElementById('game-wrapper'), engine: engine,
-        options: { width: GW, height: GH, wireframes: false, background: '#ecf0f1', pixelRatio: window.devicePixelRatio || 1 }
+        element: document.getElementById('game-wrapper'), 
+        engine: engine,
+        options: { 
+            width: GW, height: GH, 
+            wireframes: false, 
+            background: '#ecf0f1', 
+            pixelRatio: window.devicePixelRatio || 1 
+        }
     });
 
-    // 20 Hardcoded Levels Array [Spigot(x,y), Glass(x,y), Obstacles[[x,y,w,h,angle]...]]
+    // --- 20 HARDCODED LEVEL DEFINITIONS ---
+    // s: Spigot [x, y], g: Glass [x, y], o: Obstacles [[x, y, w, h, angle]]
     const levels = [
+        // Level 1: Basic Drop
         { s: [300, 100], g: [300, 700], o: [] },
-        { s: [100, 150], g: [450, 700], o: [[300, 400, 250, 20, 0.2]] },
+        // Level 2: Slight Offset
+        { s: [150, 150], g: [450, 700], o: [[300, 400, 250, 20, 0.2]] },
+        // Level 3: Dual Platforms
         { s: [300, 100], g: [300, 700], o: [[200, 350, 150, 20, 0.5], [400, 500, 150, 20, -0.5]] },
+        // Level 4: The Funnel
         { s: [500, 150], g: [100, 700], o: [[300, 300, 300, 20, -0.3], [300, 550, 300, 20, 0.3]] },
+        // Level 5: Center Block
         { s: [300, 100], g: [300, 700], o: [[300, 400, 100, 100, 0]] },
-        { s: [100, 100], g: [500, 700], o: [[200, 250, 20, 150, 0], [400, 450, 20, 150, 0]] },
+        // Level 6: Vertical Pillars
+        { s: [100, 100], g: [500, 700], o: [[200, 300, 20, 200, 0], [400, 500, 20, 200, 0]] },
+        // Level 7: V-Shape
         { s: [300, 150], g: [300, 650], o: [[150, 400, 200, 20, 0.8], [450, 400, 200, 20, -0.8]] },
+        // Level 8: Zig Zag
         { s: [150, 100], g: [150, 700], o: [[300, 300, 400, 20, 0], [150, 500, 300, 20, 0]] },
-        { s: [500, 100], g: [100, 700], o: [[400, 250, 150, 20, -0.4], [250, 450, 150, 20, -0.4]] },
+        // Level 9: Steep Slopes
+        { s: [500, 100], g: [100, 700], o: [[400, 250, 150, 20, -0.6], [250, 450, 150, 20, -0.6]] },
+        // Level 10: T-Bone
         { s: [300, 100], g: [500, 700], o: [[300, 300, 20, 200, 0], [150, 600, 300, 20, 0]] },
+        // Level 11: The Gap
         { s: [100, 150], g: [100, 700], o: [[200, 300, 200, 20, 0.3], [200, 500, 200, 20, -0.3]] },
+        // Level 12: Reverse Gap
         { s: [500, 150], g: [500, 700], o: [[400, 300, 200, 20, -0.3], [400, 500, 200, 20, 0.3]] },
-        { s: [300, 100], g: [300, 750], o: [[200, 300, 80, 80, 0], [400, 300, 80, 80, 0], [300, 500, 80, 80, 0.785]] },
+        // Level 13: Floating Diamonds
+        { s: [300, 100], g: [300, 750], o: [[200, 300, 80, 80, 0.785], [400, 300, 80, 80, 0.785], [300, 500, 80, 80, 0.785]] },
+        // Level 14: Staircase
         { s: [100, 100], g: [400, 700], o: [[250, 200, 200, 20, 0], [250, 400, 200, 20, 0], [250, 600, 200, 20, 0]] },
-        { s: [450, 100], g: [150, 700], o: [[300, 400, 400, 20, 0.5]] },
-        { s: [300, 100], g: [300, 600], o: [[100, 350, 150, 20, -0.5], [500, 350, 150, 20, 0.5]] },
-        { s: [150, 150], g: [450, 650], o: [[250, 300, 100, 100, 0], [350, 500, 100, 100, 0.4]] },
+        // Level 15: Long Slide
+        { s: [450, 100], g: [150, 700], o: [[300, 400, 450, 20, 0.4]] },
+        // Level 16: Pinball
+        { s: [300, 100], g: [300, 650], o: [[100, 350, 150, 20, -0.5], [500, 350, 150, 20, 0.5], [300, 500, 50, 50, 0]] },
+        // Level 17: Big Blocks
+        { s: [150, 150], g: [450, 650], o: [[250, 300, 120, 120, 0], [350, 500, 120, 120, 0.4]] },
+        // Level 18: Shelf Drop
         { s: [300, 100], g: [100, 700], o: [[300, 200, 200, 20, 0], [300, 400, 200, 20, 0], [300, 600, 200, 20, 0]] },
+        // Level 19: The Chute
         { s: [500, 150], g: [300, 700], o: [[400, 350, 150, 20, -0.6], [200, 550, 150, 20, 0.6]] },
-        { s: [300, 100], g: [300, 750], o: [[300, 250, 50, 50, 0], [200, 400, 50, 50, 0], [400, 400, 50, 50, 0], [300, 550, 50, 50, 0]] }
+        // Level 20: Plinko
+        { s: [300, 100], g: [300, 750], o: [[300, 250, 30, 30, 0], [200, 400, 30, 30, 0], [400, 400, 30, 30, 0], [300, 550, 30, 30, 0], [150, 250, 30,30,0], [450, 250, 30,30,0]] }
     ];
 
-    let state = 'INIT', currentLvl = 0, waterDrops = [], drawnLines = [], glassSensor, spawnTimer, checkTimer;
-    const MAX_WATER = 100, WIN_TARGET = 75, MAX_INK = 800;
-    let inkUsed = 0, isDrawing = false, lastPt = null;
+    // --- GAME STATE VARIABLES ---
+    let state = 'INIT'; // INIT, DRAW, SIM, END
+    let currentLvl = 0;
+    let waterDrops = [];
+    let drawnPath = []; // Array of vertices for the current drawn line
+    let drawnBodies = []; // Physics bodies making up the lines
+    let glassSensor;
+    let spawnTimer, checkTimer;
+    
+    // Config
+    const MAX_WATER = 120;
+    const WIN_TARGET = 85; 
+    const MAX_INK = 1200;
+    let inkUsed = 0;
+    
+    // Drawing Input Variables
+    let isDrawing = false;
+    let lastPt = null;
 
+    // UI Elements
+    const uiLvl = document.getElementById('lvl-txt');
+    const uiStatus = document.getElementById('status-txt');
+    const uiProgBar = document.getElementById('progress-bar');
+    const uiProgFill = document.getElementById('progress-fill');
+    const uiInkFill = document.getElementById('ink-fill');
+
+    // --- LEVEL INITIALIZATION ---
     function initLevel(lvl) {
-        Composite.clear(engine.world); Engine.clear(engine);
-        waterDrops = []; drawnLines = []; inkUsed = 0; state = 'DRAW';
-        document.getElementById('lvl-txt').innerText = `LVL ${lvl + 1}`;
-        document.getElementById('status-txt').innerText = 'DRAW LINE';
-        document.getElementById('status-txt').style.background = '#e74c3c';
-        document.getElementById('progress-bar').style.display = 'none';
-        document.getElementById('progress-fill').style.width = '0%';
+        Composite.clear(engine.world);
+        Engine.clear(engine);
+        
+        waterDrops = [];
+        drawnBodies = [];
+        drawnPath = [];
+        inkUsed = 0;
+        state = 'DRAW';
+        
+        // Reset UI
+        uiLvl.innerText = `LEVEL ${lvl + 1}`;
+        uiStatus.innerText = 'DRAW LINE';
+        uiStatus.style.background = '#e74c3c';
+        uiProgBar.style.display = 'none';
+        uiProgFill.style.width = '0%';
+        updateInkUI();
 
         const d = levels[lvl];
         
-        // Bounds
+        // 1. World Bounds (Invisible walls to prevent losing objects)
         Composite.add(engine.world, [
-            Bodies.rectangle(GW/2, GH+50, GW*2, 100, { isStatic: true, render: { visible: false } }),
-            Bodies.rectangle(-50, GH/2, 100, GH*2, { isStatic: true, render: { visible: false } }),
-            Bodies.rectangle(GW+50, GH/2, 100, GH*2, { isStatic: true, render: { visible: false } })
+            Bodies.rectangle(GW/2, GH+150, GW*3, 100, { isStatic: true, render: { visible: false } }), // Floor (kill zone)
+            Bodies.rectangle(-100, GH/2, 100, GH*3, { isStatic: true, render: { visible: false } }), // Left wall
+            Bodies.rectangle(GW+100, GH/2, 100, GH*3, { isStatic: true, render: { visible: false } })  // Right wall
         ]);
 
-        // Glass
-        const gw = 90, gh = 110, gt = 10;
-        const gOpt = { isStatic: true, friction: 0.1, render: { fillStyle: 'rgba(255,255,255,0.4)', strokeStyle: '#bdc3c7', lineWidth: 2 } };
+        // 2. The Glass
+        const gw = 100, gh = 120, gt = 12; // width, height, thickness
+        const gOpt = { 
+            isStatic: true, 
+            friction: 0.1, 
+            render: { fillStyle: 'rgba(52, 152, 219, 0.2)', strokeStyle: '#2980b9', lineWidth: 3 } 
+        };
+        
+        // Glass consists of 3 rectangles
         Composite.add(engine.world, [
-            Bodies.rectangle(d.g[0] - gw/2, d.g[1], gt, gh, gOpt),
-            Bodies.rectangle(d.g[0] + gw/2, d.g[1], gt, gh, gOpt),
-            Bodies.rectangle(d.g[0], d.g[1] + gh/2, gw + gt, gt, gOpt)
+            Bodies.rectangle(d.g[0] - gw/2, d.g[1], gt, gh, gOpt), // Left lip
+            Bodies.rectangle(d.g[0] + gw/2, d.g[1], gt, gh, gOpt), // Right lip
+            Bodies.rectangle(d.g[0], d.g[1] + gh/2, gw + gt, gt, gOpt) // Bottom
         ]);
         
-        glassSensor = Bodies.rectangle(d.g[0], d.g[1], gw - 15, gh - 15, { isStatic: true, isSensor: true, render: { visible: false } });
+        // Glass Sensor (Detects water)
+        glassSensor = Bodies.rectangle(d.g[0], d.g[1], gw - 20, gh - 20, { 
+            isStatic: true, isSensor: true, render: { visible: false } 
+        });
         Composite.add(engine.world, glassSensor);
 
-        // Spigot
-        Composite.add(engine.world, Bodies.rectangle(d.s[0], d.s[1], 40, 20, { isStatic: true, render: { fillStyle: '#7f8c8d' } }));
+        // 3. The Spigot (Source of water)
+        Composite.add(engine.world, Bodies.rectangle(d.s[0], d.s[1], 50, 20, { 
+            isStatic: true, render: { fillStyle: '#7f8c8d' } 
+        }));
+        // Spigot pipe visual
+        Composite.add(engine.world, Bodies.rectangle(d.s[0], d.s[1]-20, 20, 40, { 
+            isStatic: true, render: { fillStyle: '#95a5a6' } 
+        }));
 
-        // Obstacles
+        // 4. Obstacles
         d.o.forEach(o => {
-            Composite.add(engine.world, Bodies.rectangle(o[0], o[1], o[2], o[3], { isStatic: true, angle: o[4], render: { fillStyle: '#e67e22' } }));
+            Composite.add(engine.world, Bodies.rectangle(o[0], o[1], o[2], o[3], { 
+                isStatic: true, angle: o[4], 
+                render: { fillStyle: '#e67e22', strokeStyle: '#d35400', lineWidth: 2 } 
+            }));
         });
     }
 
-    function spawnWater() {
-        if(state !== 'SIM') return;
-        let count = 0;
-        document.getElementById('status-txt').innerText = 'POURING...';
-        document.getElementById('status-txt').style.background = '#f39c12';
-        document.getElementById('progress-bar').style.display = 'block';
-
-        spawnTimer = setInterval(() => {
-            if(count >= MAX_WATER) {
-                clearInterval(spawnTimer);
-                checkTimer = setTimeout(checkWin, 3000);
-                return;
-            }
-            const drop = Bodies.circle(levels[currentLvl].s[0] + (Math.random()*10-5), levels[currentLvl].s[1] + 20, 5, {
-                restitution: 0.3, friction: 0.001, density: 0.05, render: { fillStyle: '#3498db' }
-            });
-            waterDrops.push(drop);
-            Composite.add(engine.world, drop);
-            count++;
-        }, 30);
-    }
-
-    function checkWin() {
-        if(state !== 'SIM') return;
-        let inGlass = 0;
-        waterDrops.forEach(d => {
-            if(Matter.Bounds.contains(glassSensor.bounds, d.position) && Matter.Detector.canCollide(d.collisionFilter, glassSensor.collisionFilter)) {
-                if(Matter.Collision.collides(d, glassSensor)) inGlass++;
-            }
-        });
-
-        if(inGlass >= WIN_TARGET) {
-            document.getElementById('status-txt').innerText = 'SUCCESS!';
-            document.getElementById('status-txt').style.background = '#2ecc71';
-            setTimeout(() => {
-                currentLvl++;
-                if(currentLvl >= levels.length) showScreen("YOU WIN!", "All 20 levels completed.");
-                else showScreen("LEVEL CLEARED!", `Ready for Level ${currentLvl + 1}?`, "NEXT");
-            }, 1500);
-        } else {
-            document.getElementById('status-txt').innerText = 'FAILED!';
-            setTimeout(() => showScreen("OUT OF WATER", "Try drawing a better path.", "RETRY"), 1000);
-        }
-    }
-
-    // Input Handling
-    function getXY(e) {
+    // --- DRAWING MECHANICS ---
+    function getCanvasCoords(e) {
         const rect = render.canvas.getBoundingClientRect();
         const clientX = e.touches ? e.touches[0].clientX : e.clientX;
         const clientY = e.touches ? e.touches[0].clientY : e.clientY;
-        return { x: (clientX - rect.left) * (GW / rect.width), y: (clientY - rect.top) * (GH / rect.height) };
+        // Map viewport coordinates to logical game coordinates
+        return { 
+            x: (clientX - rect.left) * (GW / rect.width), 
+            y: (clientY - rect.top) * (GH / rect.height) 
+        };
     }
 
-    function startDraw(e) {
+    function startDrawing(e) {
         if(state !== 'DRAW') return;
-        isDrawing = true; lastPt = getXY(e);
+        isDrawing = true; 
+        lastPt = getCanvasCoords(e);
+        drawnPath = [lastPt];
     }
 
-    function drawLine(e) {
-        if(!isDrawing || state !== 'DRAW' || inkUsed >= MAX_INK) return;
+    function continueDrawing(e) {
+        if(!isDrawing || state !== 'DRAW') return;
         e.preventDefault();
-        const pt = getXY(e);
+        const pt = getCanvasCoords(e);
         const dist = Vector.magnitude(Vector.sub(pt, lastPt));
-        if(dist > 8) {
-            const circle = Bodies.circle(pt.x, pt.y, 6, { isStatic: true, render: { fillStyle: '#2c3e50' } });
-            Composite.add(engine.world, circle);
-            drawnLines.push(circle);
-            inkUsed += dist; lastPt = pt;
+        
+        // Only place a body if we've moved a minimum distance
+        if(dist > 5) {
+            if (inkUsed + dist > MAX_INK) {
+                endDrawing(); // Force end if out of ink
+                return;
+            }
+
+            // Create a capsule/rounded line segment connecting last point to this point
+            const midPoint = { x: (lastPt.x + pt.x)/2, y: (lastPt.y + pt.y)/2 };
+            const angle = Math.atan2(pt.y - lastPt.y, pt.x - lastPt.x);
+            
+            const lineSegment = Bodies.rectangle(midPoint.x, midPoint.y, dist + 6, 8, { 
+                isStatic: true, 
+                angle: angle,
+                friction: 0.5,
+                restitution: 0.2,
+                render: { fillStyle: '#2c3e50' },
+                // Create rounded caps for smooth drawing
+                chamfer: { radius: 4 }
+            });
+
+            Composite.add(engine.world, lineSegment);
+            drawnBodies.push(lineSegment);
+            
+            inkUsed += dist; 
+            updateInkUI();
+            lastPt = pt;
+            drawnPath.push(pt);
         }
     }
 
-    function endDraw(e) {
+    function endDrawing() {
         if(state !== 'DRAW') return;
-        isDrawing = false; lastPt = null;
-        if(drawnLines.length > 0) { state = 'SIM'; spawnWater(); }
+        isDrawing = false; 
+        lastPt = null;
+        
+        // If the user drew something, trigger simulation
+        if(drawnBodies.length > 0 || inkUsed > 0) { 
+            state = 'SIM'; 
+            spawnWater(); 
+        }
     }
 
-    const c = render.canvas;
-    c.addEventListener('mousedown', startDraw); c.addEventListener('mousemove', drawLine); window.addEventListener('mouseup', endDraw);
-    c.addEventListener('touchstart', startDraw, {passive:false}); c.addEventListener('touchmove', drawLine, {passive:false}); window.addEventListener('touchend', endDraw);
+    function updateInkUI() {
+        const pct = Math.max(0, 100 - (inkUsed / MAX_INK) * 100);
+        uiInkFill.style.width = `${pct}%`;
+        if(pct < 25) uiInkFill.style.background = '#e74c3c'; // Red
+        else if(pct < 50) uiInkFill.style.background = '#f1c40f'; // Yellow
+        else uiInkFill.style.background = '#2ecc71'; // Green
+    }
+
+    // --- WATER SIMULATION ---
+    function spawnWater() {
+        if(state !== 'SIM') return;
+        
+        let count = 0;
+        uiStatus.innerText = 'SIMULATING...';
+        uiStatus.style.background = '#f39c12';
+        uiProgBar.style.display = 'block';
+
+        const spigotPos = levels[currentLvl].s;
+
+        // Spawn Interval
+        spawnTimer = setInterval(() => {
+            if(count >= MAX_WATER) {
+                clearInterval(spawnTimer);
+                // Wait for water to settle before checking win condition
+                checkTimer = setTimeout(checkWinCondition, 3500);
+                return;
+            }
+            
+            // Spawn 2 particles per tick for smoother flow
+            for(let i=0; i<2; i++) {
+                if(count >= MAX_WATER) break;
+                
+                const drop = Bodies.circle(
+                    spigotPos[0] + (Math.random()*12-6), 
+                    spigotPos[1] + 20 + (Math.random()*5), 
+                    4.5, // Particle size
+                    {
+                        restitution: 0.1, // Low bounce
+                        friction: 0.01, 
+                        density: 0.05, 
+                        frictionAir: 0.01,
+                        render: { fillStyle: 'rgba(52, 152, 219, 0.8)' }
+                    }
+                );
+                waterDrops.push(drop);
+                Composite.add(engine.world, drop);
+                count++;
+            }
+        }, 30);
+    }
+
+    // --- WIN/LOSS LOGIC ---
+    function checkWinCondition() {
+        if(state !== 'SIM') return;
+        
+        let inGlass = getWaterInGlassCount();
+
+        if(inGlass >= WIN_TARGET) {
+            uiStatus.innerText = 'SUCCESS!';
+            uiStatus.style.background = '#2ecc71';
+            
+            // Add fun upward velocity to glass water
+            waterDrops.forEach(d => {
+                if(isOverlapping(d, glassSensor)) {
+                    Body.setVelocity(d, { x: (Math.random()-0.5)*5, y: -5 - Math.random()*5 });
+                }
+            });
+
+            setTimeout(() => {
+                currentLvl++;
+                if(currentLvl >= levels.length) {
+                    showScreen("YOU WIN!", "You completed all 20 levels!", "REPLAY");
+                } else {
+                    showScreen("LEVEL CLEARED!", `Ready for Level ${currentLvl + 1}?`, "NEXT");
+                }
+            }, 2000);
+        } else {
+            uiStatus.innerText = 'FAILED!';
+            uiStatus.style.background = '#e74c3c';
+            setTimeout(() => {
+                showScreen("OUT OF WATER", `You only collected ${inGlass}/${WIN_TARGET} drops.`, "RETRY");
+            }, 1000);
+        }
+    }
+
+    // --- UTILITIES & GAME LOOP EVENTS ---
+    function isOverlapping(body1, body2) {
+        return Matter.Bounds.overlaps(body1.bounds, body2.bounds) && 
+               Matter.Collision.collides(body1, body2) != null;
+    }
+
+    function getWaterInGlassCount() {
+        let count = 0;
+        waterDrops.forEach(d => {
+            if(isOverlapping(d, glassSensor)) count++;
+        });
+        return count;
+    }
 
     Events.on(engine, 'afterUpdate', () => {
         if(state === 'SIM') {
-            let inGlass = 0;
-            waterDrops.forEach(d => {
-                if(d.position.y > GH + 100) Composite.remove(engine.world, d); // cleanup
-                else if(Matter.Bounds.contains(glassSensor.bounds, d.position) && Matter.Collision.collides(d, glassSensor)) inGlass++;
-            });
-            document.getElementById('progress-fill').style.width = `${Math.min(100, (inGlass/WIN_TARGET)*100)}%`;
+            let inGlass = getWaterInGlassCount();
+            
+            // Update Progress Bar
+            const pct = Math.min(100, (inGlass / WIN_TARGET) * 100);
+            uiProgFill.style.width = `${pct}%`;
+            if (pct >= 100) uiProgFill.style.background = '#2ecc71';
+            
+            // Cleanup fallen water to improve performance
+            for(let i = waterDrops.length - 1; i >= 0; i--) {
+                const d = waterDrops[i];
+                if(d.position.y > GH + 100) {
+                    Composite.remove(engine.world, d);
+                    waterDrops.splice(i, 1);
+                }
+            }
         }
     });
 
-    function showScreen(title, desc, btnText = "PLAY") {
+    // --- UI SCREENS & EVENT LISTENERS ---
+    function showScreen(title, desc, btnText) {
         document.getElementById('overlay').style.display = 'flex';
         document.getElementById('o-title').innerText = title;
         document.getElementById('o-desc').innerText = desc;
@@ -237,11 +453,27 @@
 
     document.getElementById('start-btn').addEventListener('click', () => {
         document.getElementById('overlay').style.display = 'none';
-        if(currentLvl >= levels.length) currentLvl = 0;
+        if(currentLvl >= levels.length) currentLvl = 0; // Reset game if beat
         initLevel(currentLvl);
     });
 
-    Render.run(render); Runner.run(Runner.create(), engine);
+    // Attach Event Listeners to Canvas
+    const c = render.canvas;
+    
+    // Desktop Mouse
+    c.addEventListener('mousedown', startDrawing); 
+    c.addEventListener('mousemove', continueDrawing); 
+    window.addEventListener('mouseup', endDrawing);
+    
+    // Mobile Touch
+    c.addEventListener('touchstart', startDrawing, {passive:false}); 
+    c.addEventListener('touchmove', continueDrawing, {passive:false}); 
+    window.addEventListener('touchend', endDrawing);
+
+    // --- START ENGINE ---
+    Render.run(render); 
+    Runner.run(Runner.create(), engine);
+
 </script>
 </body>
 </html>
